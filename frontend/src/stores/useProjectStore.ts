@@ -1,0 +1,60 @@
+import { create } from 'zustand'
+
+export type Project = {
+  id: number
+  name: string
+  created_at?: string
+}
+
+type ProjectStore = {
+  projects: Project[]
+  selectedProjectId: number | null
+  loading: boolean
+  error: string | null
+  loadProjects: () => Promise<void>
+  createProject: (name: string) => Promise<void>
+  selectProject: (projectId: number | null) => void
+  clearError: () => void
+}
+
+export const useProjectStore = create<ProjectStore>((set, get) => ({
+  projects: [],
+  selectedProjectId: null,
+  loading: false,
+  error: null,
+  loadProjects: async () => {
+    set({ loading: true, error: null })
+    try {
+      const projects = await window.api.listProjects()
+      const nextSelectedProjectId = projects.length > 0 && (get().selectedProjectId == null || !projects.some((project) => project.id === get().selectedProjectId))
+        ? projects[0].id
+        : get().selectedProjectId
+
+      set({ projects, selectedProjectId: nextSelectedProjectId, loading: false })
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error), loading: false })
+    }
+  },
+  createProject: async (name) => {
+    const trimmedName = name.trim()
+    if (!trimmedName) return
+
+    set({ loading: true, error: null })
+    try {
+      const created = await window.api.createProject(trimmedName)
+      set((state) => ({
+        projects: [...state.projects, { ...created, created_at: new Date().toISOString() }],
+        selectedProjectId: created.id,
+        loading: false,
+      }))
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error), loading: false })
+    }
+  },
+  selectProject: (projectId) => {
+    set({ selectedProjectId: projectId })
+  },
+  clearError: () => {
+    set({ error: null })
+  },
+}))

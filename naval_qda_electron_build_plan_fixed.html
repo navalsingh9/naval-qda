@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NAVAL-QDA · Electron Desktop Build Plan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F5F7FB; --surface: #FFFFFF; --surface-2: #EEF1FA;
+      --border: #E0E5F0; --border-strong: #C5CEEA;
+      --text-1: #1A1E38; --text-2: #526080; --text-3: #8C98BC;
+      --blue: #3D52D5; --blue-mid: #B8C3EF; --blue-light: #ECF0FD;
+      --red: #C0303C; --red-light: #FEF1F2;
+      --amber: #AD6E10; --amber-light: #FEF5E7;
+      --teal: #0A8B72; --teal-light: #E4F5F1;
+      --purple: #7A3FC0; --purple-light: #F3ECFB;
+      --radius: 10px; --radius-sm: 6px;
+      --shadow: 0 1px 3px rgba(26,30,56,.06), 0 4px 14px rgba(26,30,56,.04);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text-1); font-size: 14px; line-height: 1.6; }
+    .page-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 10px; }
+    .page-header h1 { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+    .page-header p  { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+    .header-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .header-pill { font-size: 11px; background: var(--surface-2); color: var(--text-2); padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border); }
+    .layout { display: flex; max-width: 1100px; margin: 0 auto; padding: 0 24px; gap: 28px; align-items: flex-start; }
+    .sidebar { width: 220px; flex-shrink: 0; position: sticky; top: 65px; padding: 24px 0; }
+    .sidebar-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); padding: 0 6px; margin-bottom: 10px; }
+    .session-nav { list-style: none; display: flex; flex-direction: column; gap: 1px; }
+    .session-nav a { display: flex; align-items: center; gap: 9px; text-decoration: none; color: var(--text-2); padding: 6px 10px; border-radius: var(--radius-sm); font-size: 12.5px; transition: background .12s, color .12s; }
+    .session-nav a:hover { background: var(--surface-2); color: var(--text-1); }
+    .session-nav a.active { background: var(--blue-light); color: var(--blue); font-weight: 500; }
+    .nav-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .nav-dot.foundation { background: var(--blue); }
+    .nav-dot.easy       { background: var(--teal); }
+    .nav-dot.medium     { background: var(--amber); }
+    .nav-dot.hard       { background: var(--red); }
+    .sidebar-divider { height: 1px; background: var(--border); margin: 14px 6px; }
+    .sidebar-legend { padding: 0 6px; }
+    .legend-title { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 7px; }
+    .legend-row { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-2); margin-bottom: 4px; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .main-content { flex: 1; min-width: 0; padding: 24px 0 60px; }
+    .how-to { background: var(--blue-light); border: 1px solid var(--blue-mid); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; }
+    .how-to h2 { font-size: 12px; font-weight: 600; color: var(--blue); margin-bottom: 10px; }
+    .how-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .how-step { display: flex; gap: 8px; align-items: flex-start; }
+    .step-num { width: 18px; height: 18px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .how-step p { font-size: 11.5px; color: var(--text-2); line-height: 1.5; }
+    .how-step strong { color: var(--text-1); }
+    .scope-note { background: var(--purple-light); border: 1px solid #D9C2F0; border-radius: var(--radius); padding: 14px 20px; margin-bottom: 20px; font-size: 12px; color: var(--text-2); line-height: 1.6; }
+    .scope-note strong { color: var(--purple); }
+    .arch-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 24px; box-shadow: var(--shadow); }
+    .arch-box h2 { font-size: 12px; font-weight: 600; color: var(--text-1); margin-bottom: 10px; }
+    .arch-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .arch-cell { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+    .arch-cell .k { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px; }
+    .arch-cell .v { font-size: 11.5px; color: var(--text-2); font-family: 'JetBrains Mono', monospace; line-height: 1.6; }
+    .session-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 22px; box-shadow: var(--shadow); }
+    .session-header { padding: 16px 22px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .sh-left { display: flex; align-items: center; gap: 11px; }
+    .s-num { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .s-num.foundation { background: var(--blue-light); color: var(--blue); }
+    .s-num.easy       { background: var(--teal-light); color: var(--teal); }
+    .s-num.medium     { background: var(--amber-light); color: var(--amber); }
+    .s-num.hard       { background: var(--red-light); color: var(--red); }
+    .s-title { font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
+    .s-sub   { font-size: 11.5px; color: var(--text-3); margin-top: 2px; }
+    .s-tags  { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; padding-top: 2px; }
+    .tag { font-size: 10.5px; font-weight: 500; padding: 2px 8px; border-radius: 20px; }
+    .tag.foundation { background: var(--blue-light); color: var(--blue); }
+    .tag.easy       { background: var(--teal-light); color: var(--teal); }
+    .tag.medium     { background: var(--amber-light); color: var(--amber); }
+    .tag.hard       { background: var(--red-light); color: var(--red); }
+    .tag.turns      { background: var(--surface-2); color: var(--text-2); }
+    .card-section { padding: 16px 22px; border-bottom: 1px solid var(--border); }
+    .card-section:last-child { border-bottom: none; }
+    .sec-label { font-size: 10px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-3); margin-bottom: 11px; }
+    .file-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .file-chip { display: flex; align-items: center; gap: 5px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 4px 9px; font-size: 11.5px; font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--text-2); }
+    .file-chip.new-file { background: #FEF1F2; border-color: #F0C0C4; color: var(--red); }
+    .upload-note { margin-top: 9px; font-size: 11px; color: var(--amber); background: var(--amber-light); border: 1px solid #F0D09A; border-radius: var(--radius-sm); padding: 6px 10px; display: inline-block; }
+    .issues-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .issue-item  { display: flex; align-items: flex-start; gap: 9px; }
+    .issue-cb { width: 15px; height: 15px; border: 2px solid var(--border-strong); border-radius: 3px; flex-shrink: 0; margin-top: 3px; cursor: pointer; appearance: none; -webkit-appearance: none; background: white; transition: background .12s, border-color .12s; }
+    .issue-cb:checked { background: var(--teal); border-color: var(--teal); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2.5 6l2.5 2.5 5-5' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-size: 10px; background-repeat: no-repeat; background-position: center; }
+    .issue-badge { font-size: 9.5px; font-weight: 700; padding: 2px 5px; border-radius: 3px; flex-shrink: 0; margin-top: 3px; letter-spacing: .02em; }
+    .issue-badge.s  { background: #E4F5F1; color: var(--teal); }
+    .issue-badge.m  { background: var(--amber-light); color: var(--amber); }
+    .issue-badge.l  { background: var(--red-light); color: var(--red); }
+    .issue-badge.f  { background: var(--blue-light); color: var(--blue); }
+    .issue-text { font-size: 12.5px; color: var(--text-2); line-height: 1.5; }
+    .issue-text code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--surface-2); padding: 1px 4px; border-radius: 3px; color: var(--text-1); }
+    .prompt-wrap { border: 1px solid var(--border); border-left: 3px solid var(--blue); border-radius: var(--radius-sm); overflow: hidden; }
+    .prompt-bar { display: flex; align-items: center; justify-content: space-between; padding: 7px 12px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+    .prompt-fname { font-size: 10.5px; font-family: 'JetBrains Mono', monospace; color: var(--text-3); }
+    .copy-btn { font-size: 11px; font-weight: 500; font-family: 'Inter', sans-serif; color: var(--blue); background: white; border: 1px solid var(--blue-mid); border-radius: var(--radius-sm); padding: 3px 10px; cursor: pointer; transition: background .12s, color .12s; }
+    .copy-btn:hover  { background: var(--blue); color: white; border-color: var(--blue); }
+    .copy-btn.copied { background: var(--teal-light); color: var(--teal); border-color: #9EDDD0; }
+    .prompt-text { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.7; color: var(--text-1); padding: 14px 16px; white-space: pre-wrap; word-break: break-word; background: var(--surface); max-height: 420px; overflow-y: auto; }
+    .prompt-text::-webkit-scrollbar { width: 5px; }
+    .prompt-text::-webkit-scrollbar-track { background: transparent; }
+    .prompt-text::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+    @media (max-width: 760px) {
+      .sidebar { display: none; }
+      .layout  { flex-direction: column; padding: 0 14px; }
+      .how-steps { grid-template-columns: 1fr 1fr; }
+      .arch-grid { grid-template-columns: 1fr; }
+      .page-header { padding: 12px 16px; }
+      .header-pills { display: none; }
+      .session-header { flex-direction: column; }
+      .s-tags { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="page-header">
+  <div>
+    <h1>NAVAL-QDA — Electron Desktop Build Plan</h1>
+    <p>17 sessions · Electron + React + Node backend · packaged for Windows / macOS / Linux · branch: feature/v1.0-desktop</p>
+  </div>
+  <div class="header-pills">
+    <span class="header-pill">Electron</span>
+    <span class="header-pill">React + Vite</span>
+    <span class="header-pill">better-sqlite3</span>
+    <span class="header-pill">exe · dmg · deb/AppImage</span>
+    <span class="header-pill">Gemini API (optional)</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-label">Sessions</div>
+    <ul class="session-nav" id="snav">
+      <li><a href="#s1" class="active"><span class="nav-dot foundation"></span>S1 — Scaffold</a></li>
+      <li><a href="#s2"><span class="nav-dot foundation"></span>S2 — Data Model</a></li>
+      <li><a href="#s3"><span class="nav-dot easy"></span>S3 — Source Import</a></li>
+      <li><a href="#s4"><span class="nav-dot hard"></span>S4 — Coding Engine</a></li>
+      <li><a href="#s5"><span class="nav-dot easy"></span>S5 — Memos &amp; Cases</a></li>
+      <li><a href="#s6"><span class="nav-dot easy"></span>S6 — Search &amp; Word Freq</a></li>
+      <li><a href="#s7"><span class="nav-dot medium"></span>S7 — Matrix &amp; Kappa</a></li>
+      <li><a href="#s8"><span class="nav-dot hard"></span>S8 — Visualizations Data</a></li>
+      <li><a href="#s9"><span class="nav-dot hard"></span>S9 — Audio/Video + Transcription</a></li>
+      <li><a href="#s10"><span class="nav-dot foundation"></span>S10 — Reports + IPC Bridge</a></li>
+      <li><a href="#s11"><span class="nav-dot medium"></span>S11 — App Shell UI</a></li>
+      <li><a href="#s12"><span class="nav-dot hard"></span>S12 — Coding Workspace UI</a></li>
+      <li><a href="#s13"><span class="nav-dot medium"></span>S13 — Query &amp; Viz UI</a></li>
+      <li><a href="#s14"><span class="nav-dot hard"></span>S14 — Media Player UI</a></li>
+      <li><a href="#s15"><span class="nav-dot medium"></span>S15 — Packaging</a></li>
+      <li><a href="#s16"><span class="nav-dot hard"></span>S16 — AI Backend (Gemini)</a></li>
+      <li><a href="#s17"><span class="nav-dot medium"></span>S17 — AI Suggestions UI</a></li>
+    </ul>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-legend">
+      <div class="legend-title">Complexity</div>
+      <div class="legend-row"><span class="legend-dot" style="background:var(--blue)"></span>Foundation / wiring</div>
+      <div class="legend-row"><span class="legend-dot" style="background:var(--teal)"></span>Easy — independent</div>
+      <div class="legend-row"><span class="legend-dot" style="background:var(--amber)"></span>Medium</div>
+      <div class="legend-row"><span class="legend-dot" style="background:var(--red)"></span>Hard — multi-day</div>
+      <div class="sidebar-divider"></div>
+      <div class="legend-title">Badge</div>
+      <div class="legend-row"><span class="issue-badge f" style="margin:0">F</span>Foundation</div>
+      <div class="legend-row"><span class="issue-badge s" style="margin:0">S</span>Small (~1 day)</div>
+      <div class="legend-row"><span class="issue-badge m" style="margin:0">M</span>Medium (~2–3 days)</div>
+      <div class="legend-row"><span class="issue-badge l" style="margin:0">L</span>Large (~4+ days)</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <div class="how-to">
+      <h2>How to use this plan</h2>
+      <div class="how-steps">
+        <div class="how-step"><div class="step-num">1</div><p><strong>Backend before frontend.</strong> S1–S10 build the whole main-process backend and IPC surface; S11–S14 only consume it.</p></div>
+        <div class="how-step"><div class="step-num">2</div><p><strong>Upload only listed files.</strong> Smaller context, fewer mistakes, cheaper turns.</p></div>
+        <div class="how-step"><div class="step-num">3</div><p><strong>Copy the prompt as-is</strong> into Claude Code or your agentic coding tool of choice.</p></div>
+        <div class="how-step"><div class="step-num">4</div><p><strong>Check off items</strong> as they land; re-upload the updated file before the next session.</p></div>
+      </div>
+    </div>
+
+    <div class="arch-box">
+      <h2>Architecture at a glance</h2>
+      <div class="arch-grid">
+        <div class="arch-cell"><div class="k">Shell</div><div class="v">Electron (main + preload + renderer)</div></div>
+        <div class="arch-cell"><div class="k">Frontend</div><div class="v">React 18 + Vite<br>Zustand (state)<br>No manual DOM manipulation</div></div>
+        <div class="arch-cell"><div class="k">Backend</div><div class="v">Real Node modules in the<br>main process — not a webpage script</div></div>
+        <div class="arch-cell"><div class="k">Bridge</div><div class="v">contextBridge + ipcRenderer<br>(contextIsolation: true, nodeIntegration: false)</div></div>
+        <div class="arch-cell"><div class="k">Storage</div><div class="v">better-sqlite3, file lives in<br>app.getPath('userData')</div></div>
+        <div class="arch-cell"><div class="k">Packaging</div><div class="v">electron-builder →<br>nsis (.exe) · dmg · deb/AppImage</div></div>
+        <div class="arch-cell"><div class="k">AI Assist</div><div class="v">Optional, pluggable (backend/ai.js)<br>Gemini by default — bring-your-own free key</div></div>
+      </div>
+    </div>
+
+    <div class="scope-note">
+      <strong>Why IPC instead of a local HTTP server —</strong> the backend runs as plain Node modules inside Electron's main process (full <code>fs</code>/native-module access, no sandboxing headaches for ffmpeg/whisper). The renderer never touches Node directly: <code>preload.js</code> exposes a narrow, typed API via <code>contextBridge</code>, and React components call it like any async function (<code>await window.api.applyCoding(...)</code>). This is the same "real backend, dumb frontend" separation as the original FastAPI plan — just both sides are JS, and shipped as one binary instead of a server + browser tab. If you'd rather keep a genuine HTTP server (e.g. to reuse it for a future web version), swap S1 to spin up Express in the main process and have the renderer hit <code>localhost</code> instead of IPC — everything from S2 onward stays the same.
+    </div>
+
+    <!-- ══ SESSION 1 ══ -->
+    <section class="session-card" id="s1">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num foundation">1</div>
+          <div>
+            <div class="s-title">Project Scaffold — Electron + Vite + React</div>
+            <div class="s-sub">Folder structure, main/preload/renderer split, dev tooling, electron-builder skeleton</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag foundation">Foundation</span><span class="tag turns">~4 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip new-file">✦ empty repo — nothing to upload</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text">Folder layout: <code>/electron/main.js</code>, <code>/electron/preload.js</code>, <code>/backend/</code> (service modules, Session 2+), <code>/frontend/</code> (Vite React app), <code>/electron-builder.yml</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text">Root <code>package.json</code> — scripts: <code>dev</code> (concurrently run Vite dev server + Electron pointed at it), <code>build</code> (vite build then electron-builder), <code>package:win/mac/linux</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text"><code>electron/main.js</code> — <code>BrowserWindow</code> with <code>webPreferences: {contextIsolation: true, nodeIntegration: false, preload: path.join(__dirname,'preload.js')}</code>; loads Vite dev server URL in dev, <code>dist/index.html</code> in production</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text"><code>electron/preload.js</code> — stub <code>contextBridge.exposeInMainWorld('api', {})</code>, to be filled in as each backend module lands</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>frontend/</code> — Vite + React + TypeScript template, Zustand installed, a placeholder <code>App.tsx</code> that calls <code>window.api.ping()</code> to confirm the bridge works end-to-end</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">electron-builder.yml skeleton — <code>appId</code>, <code>productName: "NAVAL-QDA"</code>, empty <code>win</code>/<code>mac</code>/<code>linux</code> target blocks (filled in Session 15)</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_1_scaffold.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p1')">Copy prompt</button></div><pre class="prompt-text" id="p1"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 2 ══ -->
+    <section class="session-card" id="s2">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num foundation">2</div>
+          <div>
+            <div class="s-title">Data Model &amp; Database — backend/db.js</div>
+            <div class="s-sub">better-sqlite3 schema, migrations, DB lives in Electron's userData path</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag foundation">Foundation</span><span class="tag turns">~4 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 electron/main.js</div><div class="file-chip new-file">✦ create: backend/db.js</div><div class="file-chip new-file">✦ create: backend/schema.sql</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text"><code>backend/schema.sql</code> — tables: <code>projects, sources, nodes, coders, codings, cases, attributes, case_attribute_values, source_case_links, memos</code>, mirroring the fields from the earlier FastAPI schema design (source has <code>content</code>, <code>paragraph_offsets</code> JSON text, <code>media_path</code>, <code>transcript_timestamps</code> JSON text; coding has <code>start_offset/end_offset</code> + nullable <code>timestamp_start/timestamp_end</code>)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text"><code>backend/db.js</code> — <code>const db = new Database(path.join(app.getPath('userData'), 'navalqda.db'))</code>; run <code>schema.sql</code> on first launch if tables don't exist; export the <code>db</code> instance</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Enable <code>PRAGMA foreign_keys = ON</code> and <code>PRAGMA journal_mode = WAL</code> for concurrent read safety</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Simple migration runner: <code>backend/migrations/NNN_description.sql</code> files, a <code>schema_version</code> table tracking which have run — needed since this is a shipped desktop app and users will upgrade in place</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_2_data_model.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p2')">Copy prompt</button></div><pre class="prompt-text" id="p2"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 3 ══ -->
+    <section class="session-card" id="s3">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num easy">3</div>
+          <div>
+            <div class="s-title">Source Import — backend/sources.js</div>
+            <div class="s-sub">.txt / .docx / .pdf ingestion, paragraph indexing</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag easy">Easy</span><span class="tag turns">~3 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 backend/db.js</div><div class="file-chip">📄 backend/schema.sql</div><div class="file-chip new-file">✦ create: backend/sources.js</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>importTxt(filePath, projectId, title)</code> — read via <code>fs.readFile</code>, normalize line endings, split on blank lines into paragraphs</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>importDocx(filePath, projectId, title)</code> via <code>mammoth</code> (extractRawText) — same paragraph_offsets construction</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>importPdf(filePath, projectId, title)</code> via <code>pdf-parse</code> — extract per-page text; if a page yields empty text, insert a placeholder paragraph noting OCR is required</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Shared helper <code>buildParagraphOffsets(paragraphs)</code> returning <code>{content, paragraphOffsets}</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Duplicate-title guard per project, with an <code>overwrite</code> flag that cascades-deletes the old source's codings first</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_3_source_import.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p3')">Copy prompt</button></div><pre class="prompt-text" id="p3"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 4 ══ -->
+    <section class="session-card" id="s4">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num hard">4</div>
+          <div>
+            <div class="s-title">Coding Engine — backend/coding.js</div>
+            <div class="s-sub">Span-based apply/remove coding, hierarchical node tree, merge, coverage — highest data-integrity risk</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag hard">Hard</span><span class="tag turns">~6 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 backend/db.js</div><div class="file-chip">📄 backend/schema.sql</div><div class="file-chip new-file">✦ create: backend/coding.js</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge l">L</span><span class="issue-text"><code>applyCoding({sourceId, nodeId, coderId, startOffset, endOffset, timestampStart, timestampEnd})</code> — validate offsets against source content length, allow cross-node overlap, reject exact duplicates (same node+coder+span)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>removeCoding(codingId)</code>, <code>getCodingsForSource(sourceId, {nodeId})</code> sorted by <code>start_offset</code> for coding-stripe rendering</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>createNode({projectId, name, parentId})</code>, <code>moveNode(nodeId, newParentId)</code> with cycle detection (walk the parent chain before allowing the move)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>getNodeTree(projectId)</code> — recursive build with per-node <code>codingCount</code>, rolled up from descendants when <code>aggregate = true</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>mergeNodes(sourceNodeId, targetNodeId)</code> — reassign codings and children, delete the source node, wrapped in a single <code>db.transaction()</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>percentCoded(sourceId)</code> — merge overlapping intervals, divide covered chars by total content length</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_4_coding_engine.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p4')">Copy prompt</button></div><pre class="prompt-text" id="p4"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 5 ══ -->
+    <section class="session-card" id="s5">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num easy">5</div>
+          <div>
+            <div class="s-title">Memos &amp; Case Classifications — backend/memos.js</div>
+            <div class="s-sub">Analytic memos, participant classification sheet</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag easy">Easy</span><span class="tag turns">~3 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 backend/db.js</div><div class="file-chip">📄 backend/schema.sql</div><div class="file-chip new-file">✦ create: backend/memos.js</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>createMemo</code> / <code>updateMemo</code> / <code>listMemos(linkedType, linkedId)</code> — polymorphic link to source/node/case</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>createCase</code>, <code>listCases</code>, <code>createAttribute(name, valueType)</code> — valueType ∈ categorical/numeric/text</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>setCaseAttributeValue</code> — upsert, with numeric validation when the attribute's type demands it</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>linkSourceToCase</code> — idempotent insert-or-ignore</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>getClassificationSheet(projectId)</code> — cases × attributes matrix for a spreadsheet-style table view</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_5_memos_cases.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p5')">Copy prompt</button></div><pre class="prompt-text" id="p5"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 6 ══ -->
+    <section class="session-card" id="s6">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num easy">6</div>
+          <div>
+            <div class="s-title">Text Search &amp; Word Frequency — backend/query.js</div>
+            <div class="s-sub">Search across sources, word-frequency query with stopwords/stemming</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag easy">Easy</span><span class="tag turns">~3 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 backend/db.js</div><div class="file-chip new-file">✦ create: backend/query.js</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>textSearch({projectId, term, sourceIds, useRegex, caseSensitive})</code> — return matches with ±60 char context, sourceId, offsets</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>wordFrequency({projectId, sourceIds, minLength, topN, stemming})</code> — bundle a ~150-word default English stopword list as a JS constant (no runtime download dependency); optional stemming via the <code>natural</code> package's PorterStemmer, grouping stem-equivalent tokens into one row</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>codingQuery({projectId, nodeIds, caseFilter})</code> — coded excerpts under given nodes, optionally filtered by a case attribute value</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_6_search_wordfreq.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p6')">Copy prompt</button></div><pre class="prompt-text" id="p6"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 7 ══ -->
+    <section class="session-card" id="s7">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num medium">7</div>
+          <div>
+            <div class="s-title">Matrix Coding Query &amp; Coding Comparison — backend/query.js</div>
+            <div class="s-sub">Node × case/attribute matrix, Cohen's kappa inter-rater reliability</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag medium">Medium</span><span class="tag turns">~4 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 backend/db.js</div><div class="file-chip">📄 backend/query.js</div></div>
+          <div class="upload-note">⚠ Upload query.js with Session 6 already applied</div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>matrixCodingQuery({projectId, rows, columns, metric})</code> — rows/columns each ∈ nodes/cases/attribute-values; cell = count or coverage %</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Return <code>{rowLabels, columnLabels, cells}</code> shaped for a heatmap table component</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>codingComparison({sourceId, coderAId, coderBId, nodeId})</code> — per-paragraph binary coded/not-coded vectors for both coders, 2×2 contingency table, observed agreement, Cohen's κ computed by hand (no stats lib needed — it's a small formula)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">κ interpretation bands (Landis &amp; Koch 1977) as a lookup table</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>codingComparisonAllNodes(...)</code> — loop the above across every node</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_7_matrix_kappa.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p7')">Copy prompt</button></div><pre class="prompt-text" id="p7"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 8 ══ -->
+    <section class="session-card" id="s8">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num hard">8</div>
+          <div>
+            <div class="s-title">Visualizations Data — backend/visualize.js</div>
+            <div class="s-sub">Word cloud, hierarchy chart, hierarchical cluster analysis (dendrogram)</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag hard">Hard</span><span class="tag turns">~5 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 backend/db.js</div><div class="file-chip">📄 backend/query.js</div><div class="file-chip">📄 backend/coding.js</div><div class="file-chip new-file">✦ create: backend/visualize.js</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>wordCloudData</code> — reuse <code>wordFrequency</code>, reshape to <code>[{word, weight}]</code>; no image rendering here, the React frontend renders the cloud</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>hierarchyChartData</code> — reuse <code>getNodeTree</code>, reshape to <code>{name, value, children}</code> for a treemap component</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge l">L</span><span class="issue-text"><code>buildFeatureVectors({items, mode})</code> — term-frequency or coding-presence vectors per item; implement hierarchical agglomerative clustering (average linkage) in plain JS since there's no numpy/scipy equivalent — a small, well-tested implementation over a precomputed distance matrix is sufficient at this data scale (tens to low hundreds of items)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>clusterByWordSimilarity</code> / <code>clusterByCodingSimilarity</code> — Jaccard (binary) and Pearson correlation (weighted) distance options, returning a linkage structure the frontend dendrogram component can walk directly</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_8_visualizations.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p8')">Copy prompt</button></div><pre class="prompt-text" id="p8"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 9 ══ -->
+    <section class="session-card" id="s9">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num hard">9</div>
+          <div>
+            <div class="s-title">Audio/Video Import &amp; Transcription — backend/transcribe.js</div>
+            <div class="s-sub">The biggest lift: local transcription + timestamp-synced coding, no cloud dependency</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag hard">Hard</span><span class="tag turns">~7 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 backend/db.js</div><div class="file-chip">📄 backend/sources.js</div><div class="file-chip">📄 backend/coding.js</div><div class="file-chip new-file">✦ create: backend/transcribe.js</div></div>
+          <div class="upload-note">⚠ Requires ffmpeg bundled or system-installed, and a whisper.cpp binary/model shipped with the app</div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>importMedia(filePath, projectId, title)</code> — copy into an app-managed media directory under <code>userData</code>, keyed by UUID; use <code>fluent-ffmpeg</code> (wrapping a bundled <code>ffmpeg-static</code> binary) to probe duration and extract an audio track from video</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge l">L</span><span class="issue-text"><code>startTranscriptionJob(sourceId, modelSize)</code> — spawn <code>nodejs-whisper</code> (or shell out to a bundled whisper.cpp binary) as a child process so the UI thread never blocks; track progress via an <code>EventEmitter</code> the main process forwards to the renderer over IPC (<code>webContents.send('transcription:progress', ...)</code>)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text">Parse whisper's word/segment-level timestamp output, build <code>content</code> + <code>paragraphOffsets</code> + a parallel <code>transcriptTimestamps</code> array (one <code>[start,end]</code> per paragraph)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>updateTranscriptSegment(sourceId, segmentIndex, newText)</code> — edit without re-transcribing, recompute downstream paragraph offsets only</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text">Extend <code>coding.applyCoding</code> to accept timestamps directly for scrub-based coding on the video/audio player, independent of text offsets</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Model management: ship a small default model (e.g. whisper "base") with the installer, and a settings option to download larger models on demand into <code>userData</code> (flag that this needs network access once; everything else stays fully offline)</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_9_media_transcription.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p9')">Copy prompt</button></div><pre class="prompt-text" id="p9"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 10 ══ -->
+    <section class="session-card" id="s10">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num foundation">10</div>
+          <div>
+            <div class="s-title">Reports + IPC Bridge — backend/report.js, preload.js, main.js</div>
+            <div class="s-sub">Word/PDF report generation, and wiring every backend module through contextBridge</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag foundation">Foundation</span><span class="tag turns">~6 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips">
+            <div class="file-chip">📄 all backend/*.js</div>
+            <div class="file-chip">📄 electron/main.js</div>
+            <div class="file-chip">📄 electron/preload.js</div>
+            <div class="file-chip new-file">✦ create: backend/report.js</div>
+          </div>
+          <div class="upload-note">⚠ Upload every backend module with Sessions 2–9 already applied</div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>generateCodingReport(nodeId)</code> — <code>docx</code> npm package: node name/description, coded excerpts grouped by source, linked case attributes shown inline; return a <code>Buffer</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>generateProjectSummary(projectId)</code> — <code>pdfkit</code>: source counts, full node tree with coding counts, coder list, classification sheet table</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text"><code>electron/main.js</code> — register an <code>ipcMain.handle('channel:name', async (event, ...args) => {...})</code> for every function across all 9 backend modules; group by module namespace (e.g. <code>coding:apply</code>, <code>query:wordFrequency</code>)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text"><code>electron/preload.js</code> — <code>contextBridge.exposeInMainWorld('api', {...})</code> mirroring every channel as a plain async function, e.g. <code>applyCoding: (args) => ipcRenderer.invoke('coding:apply', args)</code>; group into namespaced sub-objects (<code>api.coding.apply</code>, <code>api.query.wordFrequency</code>) for readability on the frontend side</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">File dialogs: <code>dialog.showOpenDialog</code> for source/media import, exposed as <code>api.dialogs.pickFile(filters)</code>; save dialogs for report export</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Centralized error handling: wrap every handle in a try/catch that returns <code>{ok: false, error: message}</code> instead of throwing across the IPC boundary raw, so the frontend gets consistent shapes</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_10_reports_ipc.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p10')">Copy prompt</button></div><pre class="prompt-text" id="p10"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 11 ══ -->
+    <section class="session-card" id="s11">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num medium">11</div>
+          <div>
+            <div class="s-title">Frontend: App Shell &amp; Project/Source Management</div>
+            <div class="s-sub">React component tree, Zustand store, routing — proper components, no raw DOM calls</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag medium">Medium</span><span class="tag turns">~5 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 electron/preload.js</div><div class="file-chip">📄 frontend/src/App.tsx</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text">Zustand stores: <code>useProjectStore</code>, <code>useSourceStore</code>, <code>useNodeStore</code> — each holding data + loading/error state and thin actions that call <code>window.api.*</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>react-router</code> layout: sidebar (project switcher, section nav) + main panel, using <code>&lt;Outlet/&gt;</code> for Sources / Nodes / Query / Reports sections</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>SourceListPanel</code>, <code>SourceImportModal</code> (calls <code>api.dialogs.pickFile</code> then <code>api.sources.importTxt/Docx/Pdf/Media</code>), <code>SourceCard</code> — all controlled components reading from the store, no direct DOM queries</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>ClassificationSheetTable</code> — editable grid bound to <code>api.memos.getClassificationSheet</code>/<code>setCaseAttributeValue</code>, using controlled <code>&lt;input&gt;</code> state per cell</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Global toast/error boundary component so IPC failures (the <code>{ok:false, error}</code> shape from Session 10) surface consistently instead of silent failures</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_11_app_shell.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p11')">Copy prompt</button></div><pre class="prompt-text" id="p11"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 12 ══ -->
+    <section class="session-card" id="s12">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num hard">12</div>
+          <div>
+            <div class="s-title">Frontend: Coding Workspace</div>
+            <div class="s-sub">Source text viewer with span highlighting, node tree sidebar, coding stripes — the core daily-use screen</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag hard">Hard</span><span class="tag turns">~7 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 frontend/src stores + App.tsx</div><div class="file-chip">📄 electron/preload.js</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge l">L</span><span class="issue-text"><code>SourceTextViewer</code> — render <code>source.content</code> as React nodes split at every coding span boundary (compute a sorted list of "cut points" from all codings, map to <code>&lt;span&gt;</code> elements with background color per node) — this is state-driven rendering, not <code>innerHTML</code> manipulation</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text">Text selection → coding: use the browser Selection API read-only (<code>window.getSelection()</code>) inside a <code>onMouseUp</code> handler to compute character offsets relative to the rendered content, then call <code>api.coding.apply</code> — selection reading is fine; DOM mutation is not</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>NodeTreeSidebar</code> — recursive <code>&lt;NodeTreeItem&gt;</code> component, drag-to-recode support (drop a text selection or existing coding onto a node), context menu for rename/merge/delete backed by <code>api.coding.*</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>CodingStripes</code> — a narrow gutter column alongside the text, one colored bar per node showing where that node's coding spans fall (classic NVivo-style stripe view)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>CoverageBadge</code> — reads <code>api.coding.percentCoded</code>, small progress indicator per source in the source list</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_12_coding_workspace.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p12')">Copy prompt</button></div><pre class="prompt-text" id="p12"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 13 ══ -->
+    <section class="session-card" id="s13">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num medium">13</div>
+          <div>
+            <div class="s-title">Frontend: Query &amp; Visualization Views</div>
+            <div class="s-sub">Search, word frequency, matrix heatmap, word cloud, hierarchy chart, dendrogram</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag medium">Medium</span><span class="tag turns">~5 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 frontend/src stores + App.tsx</div><div class="file-chip">📄 electron/preload.js</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>SearchPanel</code> — term input, regex toggle, results list with context snippets, click-through to that offset in <code>SourceTextViewer</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>WordFrequencyTable</code> — sortable table bound to <code>api.query.wordFrequency</code>, stemming/min-length controls</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>MatrixHeatmap</code> — table with cell background intensity scaled to value, row/column pickers (nodes/cases/attributes) driving <code>api.query.matrixCodingQuery</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>WordCloud</code> and <code>HierarchyTreemap</code> via <code>recharts</code> (Treemap component) or a small custom SVG layout — font-size/box-size derived from the weight/value returned by the backend</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>Dendrogram</code> — render the linkage structure from <code>api.visualize.clusterByWordSimilarity</code>/<code>clusterByCodingSimilarity</code> as an SVG tree (d3-hierarchy's <code>cluster()</code> layout works well fed by the linkage matrix)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>CodingComparisonPanel</code> — coder-pair picker, per-node κ table with color-coded interpretation bands</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_13_query_viz_ui.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p13')">Copy prompt</button></div><pre class="prompt-text" id="p13"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 14 ══ -->
+    <section class="session-card" id="s14">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num hard">14</div>
+          <div>
+            <div class="s-title">Frontend: Media Player &amp; Timestamp-Synced Coding</div>
+            <div class="s-sub">Audio/video playback with a transcript panel that highlights and scrolls in sync</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag hard">Hard</span><span class="tag turns">~6 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 SourceTextViewer + stores</div><div class="file-chip">📄 electron/preload.js</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>MediaPlayer</code> — HTML5 <code>&lt;audio&gt;</code>/<code>&lt;video&gt;</code> wrapped in a controlled React component (ref + state for currentTime, no manual attribute mutation outside React's data flow), sourced from <code>media://</code> via a registered Electron protocol handler serving files from <code>userData</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>TranscriptPanel</code> — reuses <code>SourceTextViewer</code>'s span-rendering logic but keyed by <code>transcriptTimestamps</code>; auto-scrolls and highlights the active utterance as <code>currentTime</code> advances</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text">Click a transcript utterance → seek the player; click-drag a selection in the transcript → apply a coding with both offsets and derived timestamps</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>ScrubCodingControls</code> — set in/out points directly on the player timeline (for video clips with no useful transcript alignment), calling <code>api.coding.apply</code> with timestamps only</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>TranscriptionProgressToast</code> — subscribes to the <code>transcription:progress</code> IPC event from Session 9 and shows a progress bar without blocking the rest of the UI</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_14_media_player_ui.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p14')">Copy prompt</button></div><pre class="prompt-text" id="p14"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 15 ══ -->
+    <section class="session-card" id="s15">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num medium">15</div>
+          <div>
+            <div class="s-title">Packaging &amp; Distribution — electron-builder</div>
+            <div class="s-sub">exe (nsis) for Windows, dmg for macOS, deb + AppImage for Linux, plus a release workflow</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag medium">Medium</span><span class="tag turns">~5 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 electron-builder.yml</div><div class="file-chip">📄 package.json</div><div class="file-chip new-file">✦ create: .github/workflows/release.yml</div></div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text">electron-builder.yml — <code>win: {target: "nsis", icon: "build/icon.ico"}</code>, <code>mac: {target: "dmg", category: "public.app-category.education", icon: "build/icon.icns"}</code>, <code>linux: {target: ["deb","AppImage"], category: "Education"}</code></span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>extraResources</code> config to bundle the ffmpeg binary and default whisper model into the packaged app (per-platform paths under <code>build/</code>)</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Native module rebuild step for <code>better-sqlite3</code> per target platform/arch — electron-builder's <code>afterPack</code> hook or <code>electron-rebuild</code> in CI, since it's a compiled native addon</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text">GitHub Actions <code>release.yml</code> matrix build: <code>windows-latest</code> → exe, <code>macos-latest</code> → dmg, <code>ubuntu-latest</code> → deb/AppImage; triggered on <code>v*.*.*</code> tags, uploads artifacts to a GitHub Release</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Note on code signing: unsigned builds trigger SmartScreen (Windows) and Gatekeeper (macOS) warnings — document this as a known limitation for v1.0 rather than silently skipping it; a proper signing cert/notarization setup is a follow-up, not part of this session</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Auto-update stub: wire <code>electron-updater</code> pointed at the GitHub Releases feed, disabled by default behind a settings toggle until signing is sorted (unsigned auto-updates are a bigger trust problem than unsigned manual installs)</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_15_packaging.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p15')">Copy prompt</button></div><pre class="prompt-text" id="p15"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 16 ══ -->
+    <section class="session-card" id="s16">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num hard">16</div>
+          <div>
+            <div class="s-title">AI-Assisted Coding — Gemini Backend</div>
+            <div class="s-sub">Optional: document summarization into memos, evidence-backed child-code suggestions — human always accepts/rejects</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag hard">Hard</span><span class="tag turns">~6 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 backend/db.js</div><div class="file-chip">📄 backend/schema.sql</div><div class="file-chip">📄 backend/coding.js</div><div class="file-chip">📄 backend/memos.js</div><div class="file-chip">📄 electron/main.js</div><div class="file-chip">📄 electron/preload.js</div><div class="file-chip new-file">✦ create: backend/ai.js</div><div class="file-chip new-file">✦ create: backend/providers/gemini.js</div><div class="file-chip new-file">✦ create: backend/migrations/00N_ai_assist.sql</div></div>
+          <div class="upload-note">⚠ Upload main.js/preload.js with Sessions 2–15 already applied</div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text">Migration: <code>settings</code> key-value table (encrypted API key blob, provider id, model name, enabled flag) and <code>ai_suggestions</code> table (<code>node_id</code>/<code>source_id</code>, <code>kind</code>, <code>payload_json</code>, <code>status</code>), plus an <code>ai_generated</code> boolean on <code>memos</code> — run through the Session 2 migration runner, don't hand-edit schema.sql on an app that's already shipped</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>backend/providers/gemini.js</code> — wraps the <code>@google/genai</code> package using the <strong>stable generateContent call, not the newer Interactions API</strong> (Google's own docs mark Interactions as Beta and recommend generateContent for production as of mid-2026); structured JSON via <code>responseSchema</code> when a schema is passed, a typed rate-limit error on HTTP 429; default model is a single exported constant, not buried in logic — this model lineup has already moved more than once this year</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text"><code>backend/ai.js</code> — a tiny provider registry (<code>{gemini: require('./providers/gemini')}</code>) so a second backend later is a new file plus one line, not a rewrite; <code>getApiKey</code>/<code>setApiKey</code> via Electron's <code>safeStorage.encryptString</code>/<code>decryptString</code> — never plaintext in SQLite, never logged, never in a thrown error's message</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge l">L</span><span class="issue-text"><code>summarizeSource(sourceId)</code> and <code>suggestChildCodes(nodeId)</code> — the latter enforced with a JSON schema (name, rationale, evidence spans); validate every returned offset against that source's real content length and clamp or drop anything out of range before it's ever stored — the model can hallucinate positions</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>resolveSuggestion(id, action)</code> — accept creates the real node + coding rows exactly as manual coding would (reuse <code>coding.createNode</code>/<code>applyCoding</code>); reject only marks the row, touches nothing else</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text">Rate-limit handling — single-flight queue (max 1 concurrent Gemini call), exponential backoff with jitter on 429, surfaced as a typed <code>rate_limited</code> error through Session 10's <code>wrap()</code> shape rather than a raw throw; free-tier limits are genuinely tight on some models and a burst of clicks will hit them</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge f">F</span><span class="issue-text">IPC + preload wiring in Session 10's namespaced pattern: <code>ai:summarizeSource</code>, <code>ai:suggestChildCodes</code>, <code>ai:listSuggestions</code>, <code>ai:resolveSuggestion</code>, <code>ai:testApiKey</code>, <code>settings:setAiApiKey</code>, <code>settings:getAiConfig</code> — the last two never send the decrypted key back to the renderer</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_16_ai_backend.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p16')">Copy prompt</button></div><pre class="prompt-text" id="p16"></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ SESSION 17 ══ -->
+    <section class="session-card" id="s17">
+      <div class="session-header">
+        <div class="sh-left">
+          <div class="s-num medium">17</div>
+          <div>
+            <div class="s-title">Frontend: AI Suggestions &amp; Settings</div>
+            <div class="s-sub">Connect a free Gemini key, review AI suggestions with evidence — nothing is ever applied without a click</div>
+          </div>
+        </div>
+        <div class="s-tags"><span class="tag medium">Medium</span><span class="tag turns">~5 turns · fresh session</span></div>
+      </div>
+      <div>
+        <div class="card-section">
+          <div class="sec-label">Files to upload</div>
+          <div class="file-chips"><div class="file-chip">📄 frontend/src stores + App.tsx</div><div class="file-chip">📄 electron/preload.js</div><div class="file-chip">📄 SourceTextViewer</div></div>
+          <div class="upload-note">⚠ Upload preload.js with Session 16 already applied</div>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">What to build</div>
+          <ul class="issues-list">
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>AiSettingsPanel</code> — masked key input, "Get a free key" button opening <code>https://aistudio.google.com/apikey</code> via a small <code>api.system.openExternal</code> preload export, "Test connection" → <code>api.ai.testApiKey</code>, remove-key button, one plain-language paragraph on what leaves the machine and free-tier data-use terms</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>useAiStore</code> (Zustand) — config + suggestions-by-node + per-action loading/error, same thin-actions-over-<code>api.ai.*</code> pattern as Session 11's stores; every AI-dependent button elsewhere stays visibly disabled with a "set up AI in Settings" hint until a tested key exists — nothing calls Gemini automatically, every call traces back to one click</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge m">M</span><span class="issue-text"><code>AiSuggestionsPanel</code> in the Coding Workspace — per-node "Suggest child codes" button, evidence chips that jump to and highlight the real span in <code>SourceTextViewer</code> (reuse Session 12's offset-to-DOM mapping, don't rebuild it), Accept / Edit-name-then-accept / Reject per suggestion, accept-all</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text"><code>SummarizeButton</code> on source cards → creates and opens the resulting memo; a small "AI" badge wherever memos are listed, anywhere in the app, so an AI summary is never mistaken for the researcher's own analytic memo</span></li>
+            <li class="issue-item"><input type="checkbox" class="issue-cb"><span class="issue-badge s">S</span><span class="issue-text">Loading / rate-limited / no-key states — spinner while in flight, an explicit "Google's free tier is rate-limited, retrying in Ns" state rather than a generic spinner, and disabled-with-hint (not error-after-the-fact) when no key is configured yet</span></li>
+          </ul>
+        </div>
+        <div class="card-section">
+          <div class="sec-label">Prompt to paste</div>
+          <div class="prompt-wrap"><div class="prompt-bar"><span class="prompt-fname">session_17_ai_frontend.txt</span><button class="copy-btn" onclick="copyPrompt(this,'p17')">Copy prompt</button></div><pre class="prompt-text" id="p17"></pre></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+const p1 = `NAVAL-QDA Desktop — Session 1: Project Scaffold. Set up a new Electron + Vite + React + TypeScript project from scratch. This is greenfield — no existing files.
+
+── 1. Folder structure ──
+/electron/main.js
+/electron/preload.js
+/backend/           (empty for now, filled from Session 2 onward)
+/frontend/           (Vite React+TS app)
+/build/              (icons, empty placeholders for now)
+electron-builder.yml
+package.json (root)
+
+── 2. Root package.json ──
+Scripts:
+  "dev": "concurrently \\"vite --config frontend/vite.config.ts\\" \\"wait-on http://localhost:5173 && electron .\\""
+  "build:renderer": "vite build --config frontend/vite.config.ts"
+  "build": "npm run build:renderer && electron-builder"
+  "package:win": "npm run build -- --win"
+  "package:mac": "npm run build -- --mac"
+  "package:linux": "npm run build -- --linux"
+Dependencies: electron, electron-builder, concurrently, wait-on (dev deps); better-sqlite3 (added properly in Session 2)
+"main": "electron/main.js"
+
+── 3. electron/main.js ──
+  const { app, BrowserWindow } = require('electron');
+  const path = require('path');
+  const isDev = !app.isPackaged;
+
+  function createWindow() {
+    const win = new BrowserWindow({
+      width: 1400, height: 900,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        preload: path.join(__dirname, 'preload.js'),
+      },
+    });
+    if (isDev) {
+      win.loadURL('http://localhost:5173');
+      win.webContents.openDevTools();
+    } else {
+      win.loadFile(path.join(__dirname, '../frontend/dist/index.html'));
+    }
+  }
+  app.whenReady().then(createWindow);
+  app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+
+── 4. electron/preload.js ──
+  const { contextBridge, ipcRenderer } = require('electron');
+  contextBridge.exposeInMainWorld('api', {
+    ping: () => ipcRenderer.invoke('app:ping'),
+  });
+Add a matching ipcMain.handle('app:ping', () => 'pong') in main.js for the smoke test.
+
+── 5. frontend/ ──
+  Scaffold with: npm create vite@latest frontend -- --template react-ts
+  Install zustand, react-router-dom
+  Replace App.tsx with a minimal component that calls window.api.ping() on mount and displays the result, to confirm the IPC bridge works end-to-end before building anything else.
+  Add a global.d.ts declaring the window.api shape (start with { ping: () => Promise<string> }, extended each future session).
+
+── 6. electron-builder.yml skeleton ──
+  appId: com.navalqda.app
+  productName: NAVAL-QDA
+  directories:
+    output: release
+  files:
+    - electron/**/*
+    - frontend/dist/**/*
+  win: {}
+  mac: {}
+  linux: {}
+(targets filled in Session 15)
+
+Show the full contents of every file created, and confirm "npm run dev" would launch a window showing "pong".`;
+
+const p2 = `NAVAL-QDA Desktop — Session 2: Data Model & Database. Create backend/schema.sql and backend/db.js. Upload electron/main.js for reference on how app.getPath is available (db.js needs to import { app } from 'electron').
+
+── 1. backend/schema.sql ──
+CREATE TABLE IF NOT EXISTS projects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS sources (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL DEFAULT '',
+  paragraph_offsets TEXT NOT NULL DEFAULT '[]',
+  media_path TEXT,
+  transcript_timestamps TEXT,
+  duration_seconds REAL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS nodes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  parent_id INTEGER REFERENCES nodes(id),
+  name TEXT NOT NULL,
+  description TEXT,
+  color TEXT,
+  aggregate INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS coders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  name TEXT NOT NULL,
+  color TEXT
+);
+CREATE TABLE IF NOT EXISTS codings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_id INTEGER NOT NULL REFERENCES sources(id),
+  node_id INTEGER NOT NULL REFERENCES nodes(id),
+  coder_id INTEGER NOT NULL REFERENCES coders(id),
+  start_offset INTEGER NOT NULL,
+  end_offset INTEGER NOT NULL,
+  timestamp_start REAL,
+  timestamp_end REAL,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS cases (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  name TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS attributes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  name TEXT NOT NULL,
+  value_type TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS case_attribute_values (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  case_id INTEGER NOT NULL REFERENCES cases(id),
+  attribute_id INTEGER NOT NULL REFERENCES attributes(id),
+  value TEXT,
+  UNIQUE(case_id, attribute_id)
+);
+CREATE TABLE IF NOT EXISTS source_case_links (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  source_id INTEGER NOT NULL REFERENCES sources(id),
+  case_id INTEGER NOT NULL REFERENCES cases(id),
+  UNIQUE(source_id, case_id)
+);
+CREATE TABLE IF NOT EXISTS memos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  linked_type TEXT NOT NULL,
+  linked_id INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL DEFAULT '',
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL);
+
+── 2. backend/db.js ──
+  const Database = require('better-sqlite3');
+  const { app } = require('electron');
+  const path = require('path');
+  const fs = require('fs');
+
+  const dbPath = path.join(app.getPath('userData'), 'navalqda.db');
+  const db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+
+  function initDb() {
+    const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf-8');
+    db.exec(schema);
+    runMigrations();
+  }
+
+  function runMigrations() {
+    // scan backend/migrations/*.sql, compare against schema_version table, run any not yet applied, in filename order
+  }
+
+  module.exports = { db, initDb };
+
+── 3. Wire into main.js ──
+  Call initDb() from db.js at the top of app.whenReady().then(...), before createWindow().
+
+Show the full contents of schema.sql and db.js, and a one-paragraph note on how the migration runner decides what "already applied" means (I'd suggest a simple applied_migrations table listing filenames, not just a single version integer, so out-of-order or partial applies are safer).`;
+
+const p3 = `NAVAL-QDA Desktop — Session 3: Source Import. Create backend/sources.js. Upload backend/db.js and backend/schema.sql (Session 2 applied).
+
+Install: mammoth (docx text extraction), pdf-parse (pdf text extraction)
+
+── backend/sources.js ──
+  function buildParagraphOffsets(paragraphs) {
+    // returns { content, paragraphOffsets: [[start,end], ...] }, paragraphs joined by '\\n\\n'
+  }
+
+  async function importTxt(filePath, projectId, title, { overwrite = false } = {}) {
+    // fs.promises.readFile, decode utf-8, normalize \\r\\n -> \\n, split on /\\n\\s*\\n/
+    // check duplicate title for this projectId (see checkDuplicateTitle below)
+    // insert into sources with type='text'
+  }
+
+  async function importDocx(filePath, projectId, title, opts) {
+    // mammoth.extractRawText({path: filePath}) -> .value is plain text
+    // split into paragraphs on double-newline, same buildParagraphOffsets flow
+  }
+
+  async function importPdf(filePath, projectId, title, opts) {
+    // pdf-parse gives a single concatenated text string by default without a way to
+    // reliably split per-page from that function alone -- use the pagerender callback
+    // option to capture text per page, and if a page's extracted text is empty/whitespace,
+    // push a placeholder paragraph: "[Page N: no extractable text -- OCR required]"
+  }
+
+  function checkDuplicateTitle(projectId, title, overwrite) {
+    // SELECT id FROM sources WHERE project_id = ? AND title = ?
+    // if found and !overwrite -> throw an Error with a clear message (caller/IPC layer turns this into {ok:false})
+    // if found and overwrite -> DELETE FROM codings WHERE source_id = ?, then DELETE FROM sources WHERE id = ?
+  }
+
+  module.exports = { importTxt, importDocx, importPdf };
+
+Show the full contents of backend/sources.js, and flag anything about pdf-parse's per-page callback API that seems fragile (e.g. version-dependent behavior) so I know to double check it against whatever version actually installs.`;
+
+const p4 = `NAVAL-QDA Desktop — Session 4: Coding Engine. Create backend/coding.js. Upload backend/db.js and backend/schema.sql (Sessions 2-3 applied). This is the highest-integrity-risk module -- validate defensively, wrap multi-statement operations in db.transaction().
+
+── backend/coding.js ──
+  function applyCoding({ sourceId, nodeId, coderId, startOffset, endOffset, timestampStart = null, timestampEnd = null }) {
+    // fetch source, throw if endOffset > source.content.length or startOffset >= endOffset
+    // throw if an identical (source_id, node_id, coder_id, start_offset, end_offset) row already exists
+    // INSERT, return the new row
+  }
+
+  function removeCoding(codingId) { /* DELETE, throw if not found */ }
+
+  function getCodingsForSource(sourceId, { nodeId = null } = {}) {
+    // SELECT ... WHERE source_id = ? [AND node_id = ?] ORDER BY start_offset ASC
+  }
+
+  function createNode({ projectId, name, parentId = null }) {
+    // if parentId given, verify it exists and belongs to projectId, else throw
+  }
+
+  function moveNode(nodeId, newParentId) {
+    // walk up the parent chain from newParentId; if nodeId appears, throw ('would create a cycle')
+    // UPDATE nodes SET parent_id = ? WHERE id = ?
+  }
+
+  function getNodeTree(projectId) {
+    // fetch all nodes for the project, build an in-memory tree (Map by id, then link children)
+    // compute codingCount per node via a single grouped query (SELECT node_id, COUNT(*) FROM codings GROUP BY node_id)
+    // if aggregate=1 on a node, roll up descendant counts bottom-up (post-order traversal)
+  }
+
+  function mergeNodes(sourceNodeId, targetNodeId) {
+    // db.transaction(() => {
+    //   UPDATE codings SET node_id = target WHERE node_id = source
+    //   UPDATE nodes SET parent_id = target WHERE parent_id = source
+    //   DELETE FROM nodes WHERE id = source
+    // })()
+  }
+
+  function percentCoded(sourceId) {
+    // fetch all [start_offset, end_offset] for the source, sort by start,
+    // merge overlapping/adjacent intervals (classic sweep), sum merged lengths,
+    // divide by source.content.length
+  }
+
+  module.exports = { applyCoding, removeCoding, getCodingsForSource, createNode, moveNode, getNodeTree, mergeNodes, percentCoded };
+
+Show the full contents of backend/coding.js. Call out explicitly: what happens today if a node is deleted while codings still reference it (should probably be prevented at the DB layer with ON DELETE RESTRICT, or handled explicitly -- don't let it silently orphan rows).`;
+
+const p5 = `NAVAL-QDA Desktop — Session 5: Memos & Case Classifications. Create backend/memos.js. Upload backend/db.js and backend/schema.sql (Sessions 2-4 applied).
+
+── backend/memos.js ──
+  function createMemo({ projectId, linkedType, linkedId, title, content }) {
+    // linkedType in ('source','node','case'); verify the referenced row exists in the matching table before inserting, else throw
+  }
+  function updateMemo(memoId, { title, content }) {
+    // partial update, always bump updated_at = datetime('now')
+  }
+  function listMemos(linkedType, linkedId) { /* SELECT ... ORDER BY updated_at DESC */ }
+
+  function createCase({ projectId, name }) { }
+  function listCases(projectId) { }
+  function createAttribute({ projectId, name, valueType }) {
+    // valueType in ('categorical','numeric','text')
+  }
+  function setCaseAttributeValue({ caseId, attributeId, value }) {
+    // look up the attribute's value_type; if 'numeric', Number(value) must not be NaN, else throw
+    // upsert via INSERT ... ON CONFLICT(case_id, attribute_id) DO UPDATE SET value = excluded.value
+  }
+  function linkSourceToCase(sourceId, caseId) {
+    // INSERT OR IGNORE INTO source_case_links
+  }
+  function getClassificationSheet(projectId) {
+    // one row per case: { caseId, caseName, values: { [attributeName]: value|null } }
+    // fetch all cases + all attributes + all case_attribute_values for the project, assemble in JS
+  }
+
+  module.exports = { createMemo, updateMemo, listMemos, createCase, listCases, createAttribute, setCaseAttributeValue, linkSourceToCase, getClassificationSheet };
+
+Show the full contents of backend/memos.js.`;
+
+const p6 = `NAVAL-QDA Desktop — Session 6: Text Search & Word Frequency. Create backend/query.js. Upload backend/db.js (Sessions 2-5 applied).
+
+Install: natural (for PorterStemmer -- optional stemming only, do not make it a hard runtime dependency for basic frequency counts)
+
+── backend/query.js ──
+  const STOPWORDS_EN = new Set([...~150 common English words...]); // bundled constant, no network/file dependency
+
+  function textSearch({ projectId, term, sourceIds = null, useRegex = false, caseSensitive = false }) {
+    // fetch candidate sources (all in project, or filtered to sourceIds)
+    // for each, either regex.exec loop (new RegExp(term, caseSensitive ? 'g' : 'gi')) or indexOf loop for substring search
+    // for each match: { sourceId, startOffset, endOffset, context: content.slice(max(0,start-60), end+60) }
+  }
+
+  function wordFrequency({ projectId, sourceIds = null, minLength = 4, topN = 100, stemming = false }) {
+    // concatenate target sources' content, tokenize on /\\w+/g, lowercase
+    // filter: length >= minLength && !STOPWORDS_EN.has(token)
+    // if stemming: group by natural.PorterStemmer.stem(token), track most frequent surface form per stem as display word, sum counts
+    // else: group by raw token
+    // sort desc by count, slice to topN
+  }
+
+  function codingQuery({ projectId, nodeIds, caseFilter = null }) {
+    // fetch codings WHERE node_id IN (nodeIds), join sources for excerpt text (content.slice(start,end)) and title, join nodes for name
+    // if caseFilter = {attributeId, value} given: join source_case_links -> case_attribute_values and filter
+  }
+
+  module.exports = { textSearch, wordFrequency, codingQuery };
+
+Show the full contents of backend/query.js.`;
+
+const p7 = `NAVAL-QDA Desktop — Session 7: Matrix Coding Query & Coding Comparison. Extend backend/query.js. Upload the current query.js (Session 6 applied) plus db.js.
+
+── Add to backend/query.js ──
+  function matrixCodingQuery({ projectId, rows = 'nodes', columns = 'cases', metric = 'count' }) {
+    // rows/columns each one of 'nodes' | 'cases' | 'attribute_values'
+    // for nodes x cases: cells[i][j] = count of codings where node_id = rowNode.id AND EXISTS a source_case_links row
+    //   joining that coding's source to columnCase.id
+    // metric='coverage': instead of raw count, compute percent of that case's total coded characters attributable to that node
+    //   (reuse the interval-merge logic from coding.percentCoded, scoped by node_id)
+    // return { rowLabels, columnLabels, cells }
+  }
+
+  const KAPPA_BANDS = [
+    { max: 0,    label: 'Poor' },
+    { max: 0.20, label: 'Slight' },
+    { max: 0.40, label: 'Fair' },
+    { max: 0.60, label: 'Moderate' },
+    { max: 0.80, label: 'Substantial' },
+    { max: 1.01, label: 'Almost Perfect' },
+  ];
+  function interpretKappa(k) {
+    return KAPPA_BANDS.find(b => k <= b.max)?.label ?? 'Almost Perfect';
+  }
+
+  function codingComparison({ sourceId, coderAId, coderBId, nodeId }) {
+    // fetch source.paragraphOffsets as the unit boundaries
+    // for each paragraph range, determine binary coded/not by coderA and coderB at nodeId
+    //   (coded if any coding from that coder at that node overlaps the paragraph's [start,end])
+    // build 2x2 contingency: bothCoded, onlyA, onlyB, neither
+    // po = (bothCoded + neither) / total
+    // pe = ((bothCoded+onlyA)/total * (bothCoded+onlyB)/total) + ((onlyB+neither)/total * (onlyA+neither)/total)
+    // kappa = (po - pe) / (1 - pe)  -- guard divide-by-zero when pe === 1
+    // return { contingencyTable, observedAgreement: po, kappa, interpretation: interpretKappa(kappa) }
+  }
+
+  function codingComparisonAllNodes({ sourceId, coderAId, coderBId }) {
+    // fetch all nodes for the project, run codingComparison for each, return array of { nodeId, nodeName, ...result }
+  }
+
+Add these to the module.exports list. Show only the new code (don't repeat Session 6's functions), and double check the kappa formula against a hand-worked example in a comment so I can sanity check it.`;
+
+const p8 = `NAVAL-QDA Desktop — Session 8: Visualizations Data. Create backend/visualize.js. Upload backend/db.js, backend/query.js, backend/coding.js (Sessions 2-7 applied).
+
+── backend/visualize.js ──
+  function wordCloudData({ projectId, sourceIds = null, topN = 80 }) {
+    // reuse query.wordFrequency, reshape to [{ word, weight: count }]
+  }
+
+  function hierarchyChartData(projectId) {
+    // reuse coding.getNodeTree, reshape recursively to { name, value: codingCount, children: [...] }
+  }
+
+  function buildFeatureVectors({ projectId, items, mode }) {
+    // items: 'sources' | 'nodes' | 'cases' (whichever is being clustered)
+    // mode: 'word' -> columns = vocabulary from wordFrequency across all items, cell = term frequency for that item
+    //       'coding' -> columns = every node in the project, cell = coding count (or 1/0) for that item
+    // return { matrix: number[][], labels: string[] }
+  }
+
+  function distanceMatrix(matrix, metric) {
+    // metric 'jaccard': binarize rows (>0 -> 1), distance = 1 - (intersection/union) per pair
+    // metric 'pearson': distance = 1 - pearsonCorrelation(rowA, rowB) per pair
+    // return an n x n distance matrix
+  }
+
+  function hierarchicalCluster(distMatrix, labels) {
+    // implement average-linkage agglomerative clustering in plain JS:
+    // - start with each item as its own cluster
+    // - repeatedly merge the two closest clusters (by average pairwise distance), recording each merge as
+    //   { left, right, distance, size } to build a linkage list compatible with a d3-hierarchy-style tree
+    // - this is O(n^3) naive, which is fine at the scale of tens to low hundreds of sources/cases
+    // return { linkage: [...merges in order...], labels }
+  }
+
+  function clusterByWordSimilarity({ projectId, items = 'sources', similarity = 'jaccard' }) {
+    const { matrix, labels } = buildFeatureVectors({ projectId, items, mode: 'word' });
+    const dist = distanceMatrix(matrix, similarity);
+    return hierarchicalCluster(dist, labels);
+  }
+
+  function clusterByCodingSimilarity({ projectId, items = 'cases', similarity = 'jaccard' }) {
+    const { matrix, labels } = buildFeatureVectors({ projectId, items, mode: 'coding' });
+    const dist = distanceMatrix(matrix, similarity);
+    return hierarchicalCluster(dist, labels);
+  }
+
+  module.exports = { wordCloudData, hierarchyChartData, clusterByWordSimilarity, clusterByCodingSimilarity };
+
+Show the full contents of backend/visualize.js, and include a short comment block explaining the linkage output shape so the frontend dendrogram component (built in a later session) knows exactly what to consume.`;
+
+const p9 = `NAVAL-QDA Desktop — Session 9: Audio/Video Import & Transcription. Create backend/transcribe.js. Upload backend/db.js, backend/sources.js, backend/coding.js (Sessions 2-8 applied). Confirm in your summary whether ffmpeg-static and a whisper.cpp/nodejs-whisper dependency were actually resolvable in this environment -- if not, stub the transcription call clearly and note what needs to be installed.
+
+Install: ffmpeg-static, fluent-ffmpeg, nodejs-whisper (or document the alternative of shelling out to a bundled whisper.cpp binary if nodejs-whisper proves unreliable)
+
+── backend/transcribe.js ──
+  const mediaDir = path.join(app.getPath('userData'), 'media');
+  // ensure mediaDir exists on module load
+
+  async function importMedia(filePath, projectId, title) {
+    // copy the source file into mediaDir under a uuid-based filename, preserving extension
+    // use fluent-ffmpeg (setFfmpegPath(ffmpegStatic)) to ffprobe duration
+    // determine type: 'audio' or 'video' from extension/mime
+    // INSERT INTO sources (type, title, content='', paragraph_offsets='[]', media_path, duration_seconds)
+    // return the new source row
+  }
+
+  const JOBS = new Map(); // jobId -> { status: 'queued'|'running'|'done'|'error', progress, sourceId, error }
+
+  function startTranscriptionJob(sourceId, modelSize, onProgress) {
+    // generate a jobId (crypto.randomUUID()), JOBS.set(jobId, {status:'queued', progress:0, sourceId})
+    // spawn the transcription as an async function (do not await it here -- fire and forget, update JOBS as it proceeds)
+    // call onProgress(jobId, JOBS.get(jobId)) on every status change so main.js can forward it over IPC
+    // return jobId immediately
+  }
+
+  async function runTranscription(jobId, sourceId, modelSize, onProgress) {
+    // JOBS.set(jobId, {...,status:'running'})
+    // run nodejs-whisper (or spawn a whisper.cpp child_process) against the source's media_path
+    // parse output into segments: [{ start, end, text }, ...] (seconds)
+    // build content = segments.map(s=>s.text).join('\\n\\n')
+    // build paragraphOffsets aligned to those joins, and transcriptTimestamps = segments.map(s=>[s.start,s.end])
+    // UPDATE sources SET content=?, paragraph_offsets=?, transcript_timestamps=? WHERE id = sourceId
+    // JOBS.set(jobId, {status:'done', progress:100, sourceId})
+    // on any thrown error: JOBS.set(jobId, {status:'error', error: err.message})
+    // call onProgress at each meaningful step
+  }
+
+  function getJobStatus(jobId) {
+    // return JOBS.get(jobId) or throw if unknown
+  }
+
+  function updateTranscriptSegment(sourceId, segmentIndex, newText) {
+    // fetch source, parse paragraph_offsets and content, replace only that segment's text,
+    // recompute paragraph_offsets for all segments after it (lengths may have shifted),
+    // leave transcript_timestamps untouched (a text edit doesn't change timing)
+    // UPDATE sources SET content=?, paragraph_offsets=? WHERE id = sourceId
+  }
+
+  module.exports = { importMedia, startTranscriptionJob, getJobStatus, updateTranscriptSegment };
+
+Show the full contents of backend/transcribe.js. Explicitly flag: (1) whether nodejs-whisper needs a one-time model download and what that means for a fully offline user, (2) how progress is actually observable given whisper.cpp's typical output (segment-by-segment vs one final blob) -- adjust onProgress granularity to match reality rather than faking smooth progress.`;
+
+const p10 = `NAVAL-QDA Desktop — Session 10: Reports + IPC Bridge. Create backend/report.js, and rewrite electron/main.js and electron/preload.js to wire every backend module through IPC. Upload every backend/*.js file (Sessions 2-9 applied) plus the current main.js/preload.js. Work through this in blocks: schemas/report.js first, then main.js IPC handlers, then preload.js bridge -- confirm each block before moving on.
+
+── 1. backend/report.js ──
+Install: docx, pdfkit
+
+  async function generateCodingReport(nodeId) {
+    // fetch node (name, description), fetch all codings at this node grouped by source
+    // build a docx Document: title = node name, for each source a Heading2 with the source title,
+    //   then each coded excerpt as an indented/italicized paragraph, with the linked case's
+    //   classification values shown in a small table above that source's excerpts if a case link exists
+    // return Packer.toBuffer(doc)
+  }
+
+  function generateProjectSummary(projectId) {
+    // fetch project, source counts by type, full node tree with counts, coder list, classification sheet
+    // build with pdfkit: title page, source summary table, node tree indented list with counts,
+    //   coder list, classification sheet as a table
+    // return a Buffer by piping the PDFDocument into a collecting stream
+  }
+
+  module.exports = { generateCodingReport, generateProjectSummary };
+
+── 2. electron/main.js — IPC handlers ──
+Register one ipcMain.handle per backend function, namespaced by module, e.g.:
+  ipcMain.handle('sources:importTxt', async (e, args) => wrap(() => sources.importTxt(args.filePath, args.projectId, args.title, args.opts)));
+  ipcMain.handle('coding:apply', async (e, args) => wrap(() => coding.applyCoding(args)));
+  ipcMain.handle('query:wordFrequency', async (e, args) => wrap(() => query.wordFrequency(args)));
+  ... (continue for every exported function across sources.js, coding.js, memos.js, query.js, visualize.js, transcribe.js, report.js)
+
+  function wrap(fn) {
+    try { return { ok: true, data: fn() }; }
+    catch (err) { return { ok: false, error: err.message }; }
+  }
+  // note: report.js functions and transcribe's async functions need \`await fn()\` inside an async wrap variant
+
+Also add:
+  ipcMain.handle('dialogs:pickFile', async (e, filters) => dialog.showOpenDialog({ properties: ['openFile'], filters }));
+  ipcMain.handle('dialogs:saveFile', async (e, defaultPath) => dialog.showSaveDialog({ defaultPath }));
+
+For transcription progress, forward JOBS updates: pass a callback into startTranscriptionJob that does
+  win.webContents.send('transcription:progress', { jobId, ...status })
+
+── 3. electron/preload.js ──
+Mirror every channel as a namespaced async function:
+  contextBridge.exposeInMainWorld('api', {
+    sources: {
+      importTxt: (args) => ipcRenderer.invoke('sources:importTxt', args),
+      importDocx: (args) => ipcRenderer.invoke('sources:importDocx', args),
+      importPdf: (args) => ipcRenderer.invoke('sources:importPdf', args),
+      importMedia: (args) => ipcRenderer.invoke('transcribe:importMedia', args),
+    },
+    coding: { apply: (args) => ipcRenderer.invoke('coding:apply', args), /* ...remove, list, createNode, moveNode, getTree, merge, percentCoded */ },
+    memos: { /* create, update, list, createCase, listCases, createAttribute, setCaseAttributeValue, linkSourceToCase, getClassificationSheet */ },
+    query: { /* textSearch, wordFrequency, codingQuery, matrixCodingQuery, codingComparison, codingComparisonAllNodes */ },
+    visualize: { /* wordCloudData, hierarchyChartData, clusterByWordSimilarity, clusterByCodingSimilarity */ },
+    transcribe: { /* startJob, getJobStatus, updateSegment */, onProgress: (cb) => ipcRenderer.on('transcription:progress', (e, data) => cb(data)) },
+    reports: { /* generateCodingReport, generateProjectSummary */ },
+    dialogs: { pickFile: (filters) => ipcRenderer.invoke('dialogs:pickFile', filters), saveFile: (p) => ipcRenderer.invoke('dialogs:saveFile', p) },
+  });
+
+Update frontend/src/global.d.ts to match the full api shape.
+
+Show the full contents of all three files, and a summary table mapping every backend function to its IPC channel and preload path -- I want to confirm nothing was missed.`;
+
+const p11 = `NAVAL-QDA Desktop — Session 11: Frontend App Shell & Project/Source Management. Build out the React app structure. Upload electron/preload.js and the current frontend/src/App.tsx.
+
+── 1. Zustand stores (frontend/src/stores/) ──
+  useProjectStore.ts — { projects, currentProjectId, loading, error, fetchProjects(), createProject(name), setCurrentProject(id) }
+  useSourceStore.ts  — { sourcesByProject: Record<number, Source[]>, loading, error, fetchSources(projectId), importSource(kind, args) }
+  useNodeStore.ts    — { treeByProject: Record<number, NodeTreeItem[]>, loading, error, fetchTree(projectId), createNode(...), moveNode(...), mergeNodes(...) }
+  Each store's actions call window.api.* and update state from the { ok, data, error } shape returned by the IPC wrapper -- surface error into the store's error field rather than throwing across component boundaries.
+
+── 2. Routing & layout (frontend/src/App.tsx + frontend/src/layout/) ──
+  Use react-router-dom: <AppLayout> with a persistent left <Sidebar> (project switcher dropdown + nav links: Sources, Coding, Query, Visualize, Reports) and a <main><Outlet/></main>
+  Route stubs: /sources, /coding, /query, /visualize, /reports (empty placeholder pages for now except Sources)
+
+── 3. Sources section ──
+  SourceListPanel.tsx — reads useSourceStore, renders a list of SourceCard
+  SourceCard.tsx — title, type icon, coverage badge placeholder (wire in Session 12), memo count
+  SourceImportModal.tsx — kind selector (text/docx/pdf/media), calls window.api.dialogs.pickFile with the right extension filter, then the matching window.api.sources.import*, closes and refreshes the store on success, shows the store's error state on failure
+
+── 4. Classification sheet ──
+  ClassificationSheetTable.tsx — fetches via window.api.memos.getClassificationSheet(projectId), renders an editable table where each cell is a controlled <input> that calls window.api.memos.setCaseAttributeValue on blur
+
+── 5. Error/toast handling ──
+  ToastProvider.tsx (context + a simple toast stack component) — any store action that receives { ok: false, error } from the API pushes a toast; no need for a heavy library, a basic fixed-position stack is fine
+
+Show the full contents of every new file, structured as a file tree followed by each file's code.`;
+
+const p12 = `NAVAL-QDA Desktop — Session 12: Coding Workspace. This is the core screen. Upload the frontend stores + App.tsx from Session 11, and electron/preload.js.
+
+── 1. SourceTextViewer.tsx ──
+  Props: sourceId. Fetches codings via window.api.coding.list({sourceId}) and the source's content.
+  Rendering approach: build a sorted array of "cut points" from the union of all coding start/end offsets (plus 0 and content.length), then map consecutive point-pairs to <span> elements. For each span, look up which coding(s) cover that range and apply a background color derived from each covering node's color (blend via CSS if multiple codings overlap the same span, e.g. a striped background or stacked underline per node). This is pure derived-state rendering from React props/state -- no direct DOM mutation, no dangerouslySetInnerHTML.
+  Emit an onSelectionCoded(nodeId) callback prop used by the parent to know when to refresh coding counts.
+
+── 2. Selection-to-coding flow ──
+  In SourceTextViewer, an onMouseUp handler reads window.getSelection() (read-only use of the Selection API is fine -- we are not mutating the DOM through it), computes the selection's start/end character offsets relative to the rendered content (map DOM Range boundaries back to your cut-point index), and opens a small floating "Code selection to..." popover listing nodes (searchable) plus a "+ new node" option. Selecting a node calls window.api.coding.apply({sourceId, nodeId, coderId: currentCoderId, startOffset, endOffset}).
+
+── 3. NodeTreeSidebar.tsx ──
+  Recursive NodeTreeItem.tsx rendering the tree from useNodeStore, each with a coding count badge, expand/collapse, and a context menu (rename, add child, merge into..., delete) wired to window.api.coding.*
+  Support dragging a NodeTreeItem onto another to trigger mergeNodes (with a confirmation dialog, since it's destructive)
+
+── 4. CodingStripes.tsx ──
+  A narrow vertical gutter rendered alongside SourceTextViewer, one thin colored column per currently-visible node, with colored bar segments marking where that node's codings fall along the source's length (scale codings' offset ranges to the gutter's pixel height)
+
+── 5. CoverageBadge.tsx ──
+  Small component used in SourceCard (Session 11), fetches window.api.coding.percentCoded(sourceId), renders a small ring or bar
+
+Show the full contents of every new file. Flag any part of the offset-to-DOM-Range mapping you're not fully confident in -- that's the trickiest bit of this session and worth a second look rather than shipping silently wrong.`;
+
+const p13 = `NAVAL-QDA Desktop — Session 13: Query & Visualization Views. Upload the frontend stores/App.tsx and electron/preload.js.
+
+Install: recharts, d3-hierarchy
+
+── 1. SearchPanel.tsx ──
+  Term input, regex toggle, case-sensitive toggle, results list (each with context snippet, source title). Clicking a result navigates to /coding?sourceId=X&offset=Y and SourceTextViewer (from Session 12) should scroll to and briefly flash-highlight that offset -- add a scrollToOffset prop/effect to SourceTextViewer to support this.
+
+── 2. WordFrequencyTable.tsx ──
+  Sortable table (word, count) bound to window.api.query.wordFrequency, with minLength number input and a stemming checkbox that re-fetch on change.
+
+── 3. MatrixHeatmap.tsx ──
+  Row/column type pickers (nodes/cases/attribute-values), metric picker (count/coverage), renders a table where each <td>'s background-color opacity scales with its value relative to the matrix max. Bound to window.api.query.matrixCodingQuery.
+
+── 4. WordCloud.tsx and HierarchyTreemap.tsx ──
+  WordCloud: simple custom layout is fine -- sort words by weight, lay out in rows sized proportionally to weight, font-size scaled between a min/max px range. Don't over-engineer a physics-based cloud for v1.
+  HierarchyTreemap: use recharts's <Treemap> fed by window.api.visualize.hierarchyChartData's {name, value, children} shape.
+
+── 5. Dendrogram.tsx ──
+  Consume window.api.visualize.clusterByWordSimilarity / clusterByCodingSimilarity's { linkage, labels } shape. Convert the linkage merge-list into a d3-hierarchy compatible tree object, feed it into d3.cluster(), render as an SVG (paths for branches, text labels for leaves). This can be a fairly plain implementation -- clarity over cleverness.
+
+── 6. CodingComparisonPanel.tsx ──
+  Coder-pair dropdowns, "Compare" button calling window.api.query.codingComparisonAllNodes, renders a table: node name | kappa | interpretation, with interpretation cell background colored by band (red=Poor/Slight through green=Almost Perfect).
+
+Show the full contents of every new file.`;
+
+const p14 = `NAVAL-QDA Desktop — Session 14: Media Player & Timestamp-Synced Coding. Upload SourceTextViewer.tsx and the stores from Session 12, plus electron/preload.js.
+
+── 1. Custom protocol for local media ──
+Note: this requires a small addition back in electron/main.js -- register a protocol handler:
+  protocol.registerFileProtocol('media', (request, callback) => {
+    const filePath = decodeURIComponent(request.url.replace('media://', ''));
+    callback({ path: filePath });
+  });
+  (call protocol.registerSchemesAsPrivileged before app.whenReady if needed for range-request/seeking support)
+Show this main.js diff explicitly even though it's a small addition to an earlier file.
+
+── 2. MediaPlayer.tsx ──
+  Controlled wrapper around <audio>/<video> (pick tag based on source.type). Use a ref plus onTimeUpdate to keep a currentTime state value in sync -- do not imperatively set element properties outside of React-driven effects/refs. Expose an imperative handle (useImperativeHandle) with a seek(time) method for other components to call.
+  Source src={\`media://\${encodeURIComponent(source.mediaPath)}\`}
+
+── 3. TranscriptPanel.tsx ──
+  Reuses SourceTextViewer's span-rendering logic (extract the shared piece into a hook, e.g. useOffsetSpans(content, codings), if it isn't already factored that way) but the segment boundaries come from source.transcriptTimestamps instead of arbitrary coding offsets.
+  As MediaPlayer's currentTime advances, determine the active segment (binary search over transcriptTimestamps) and apply a highlighted class; auto-scroll that segment into view with scrollIntoView({block:'nearest'}) inside a useEffect keyed on the active segment index (this is an acceptable, narrowly-scoped DOM API use for scroll behavior, not general DOM manipulation).
+  Clicking a segment calls mediaPlayerRef.current.seek(segment.start).
+  Click-drag a text selection within the panel behaves like Session 12's selection-to-coding flow, but also derives timestampStart/timestampEnd from the segments the selection spans and includes them in the coding.apply call.
+
+── 4. ScrubCodingControls.tsx ──
+  "Set In" / "Set Out" buttons that capture MediaPlayer's current currentTime, plus a manual apply button that calls window.api.coding.apply with only timestampStart/timestampEnd (startOffset/endOffset omitted or set to null) for cases with no meaningful transcript alignment (e.g. coding a visual event in silent video).
+
+── 5. TranscriptionProgressToast.tsx ──
+  Subscribes via window.api.transcribe.onProgress(callback) (registered once in a top-level effect), shows a non-blocking progress toast keyed by jobId, auto-dismisses on status 'done', shows an error toast on status 'error'.
+
+Show the full contents of every new/changed file, including the main.js protocol handler diff.`;
+
+const p15 = `NAVAL-QDA Desktop — Session 15: Packaging & Distribution. Update electron-builder.yml, package.json, and add a GitHub Actions release workflow. Upload the current electron-builder.yml and package.json.
+
+── 1. electron-builder.yml ──
+appId: com.navalqda.app
+productName: NAVAL-QDA
+directories:
+  output: release
+files:
+  - electron/**/*
+  - frontend/dist/**/*
+  - backend/**/*
+extraResources:
+  - from: build/bin/\${os}
+    to: bin
+  - from: build/whisper-models/base.bin
+    to: models/base.bin
+win:
+  target: nsis
+  icon: build/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  target: dmg
+  icon: build/icon.icns
+  category: public.app-category.education
+linux:
+  target: [deb, AppImage]
+  icon: build/icon.png
+  category: Education
+
+Note in a comment: the extraResources "from: build/bin/\${os}" path assumes per-platform ffmpeg binaries are pre-placed at build/bin/win, build/bin/mac, build/bin/linux before packaging -- add a small prebuild script (scripts/fetch-ffmpeg.js) that downloads the right ffmpeg-static binary per target OS into those folders if they're not already present, so CI doesn't need them checked into the repo.
+
+── 2. package.json additions ──
+Add devDependency electron-rebuild. Add a script:
+  "postinstall": "electron-builder install-app-deps"
+This rebuilds better-sqlite3's native bindings against Electron's Node ABI automatically after install.
+
+── 3. .github/workflows/release.yml ──
+name: Release
+on:
+  push:
+    tags: ['v*.*.*']
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: \${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci
+      - run: npm run build:renderer
+      - run: npm run build -- --publish always
+        env:
+          GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+
+── 4. Signing note (add as a comment block in electron-builder.yml, not code) ──
+  # v1.0.0 ships unsigned. Windows SmartScreen and macOS Gatekeeper will warn on first launch.
+  # Follow-up: obtain an EV code signing cert (Windows) and Apple Developer ID + notarization (macOS)
+  # before wiring win.certificateFile / mac.notarize in a later release.
+
+── 5. Auto-update stub ──
+Add electron-updater as a dependency; in electron/main.js add an autoUpdater.checkForUpdatesAndNotify() call gated behind a settings flag (default false) read from a small local JSON settings file in userData -- do not enable by default while builds are unsigned.
+
+Show the full contents of all changed/new files, and a short checklist of what a maintainer needs to do manually before the first real tagged release (icons present, ffmpeg binaries fetched, whisper model bundled, signing decision made).`;
+
+const p16 = `NAVAL-QDA Desktop — Session 16: AI-Assisted Coding — Gemini Backend. Add an optional, pluggable AI-suggestion layer: document summarization into memos, and evidence-backed child-code suggestions that a researcher always reviews before anything is applied. Upload backend/db.js, backend/schema.sql, backend/coding.js, backend/memos.js, and the current electron/main.js + electron/preload.js (Sessions 2-15 applied). Work in blocks: migration and schema first, then the Gemini provider adapter, then ai.js, then IPC/preload -- confirm each block before moving on.
+
+── 1. backend/migrations/00N_ai_assist.sql ── (use whatever the next number in your sequence is)
+  CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT);
+  CREATE TABLE ai_suggestions (
+    id INTEGER PRIMARY KEY,
+    node_id INTEGER REFERENCES nodes(id) ON DELETE CASCADE,
+    source_id INTEGER REFERENCES sources(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK (kind IN ('child_code','summary')),
+    payload_json TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','rejected')),
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  ALTER TABLE memos ADD COLUMN ai_generated INTEGER NOT NULL DEFAULT 0;
+Run it through the Session 2 migration runner. Don't hand-edit schema.sql directly -- this app ships to people who will upgrade in place.
+
+── 2. backend/providers/gemini.js ──
+Wrap the npm package '@google/genai'. Use the stable generateContent call, not the newer Interactions API (client.interactions.create) -- as of mid-2026, Google's own docs mark the Interactions API as Beta and explicitly recommend generateContent for production use. This surface has already changed shape more than once in the past year, so before finalizing exact field names, check https://ai.google.dev/gemini-api/docs/text-generation and https://ai.google.dev/gemini-api/docs/structured-output against whatever is live right now, rather than trusting any specific spelling below.
+
+  const DEFAULT_MODEL = 'gemini-3.5-flash'; // change this one line if the recommended Flash-tier model has moved on by the time you build this
+
+  async function generate({ apiKey, model, systemInstruction, prompt, jsonSchema }) {
+    // build a client scoped to this apiKey per-call -- the key comes from our own encrypted
+    //   settings storage, never a process-level environment variable
+    // if jsonSchema is provided, request JSON-mode output constrained to that schema
+    //   (generationConfig: { responseMimeType: 'application/json', responseSchema: jsonSchema }),
+    //   parse the result, throw a typed error if parsing fails instead of returning garbage
+    // otherwise return the plain text response
+    // on HTTP 429, throw a typed RateLimitError -- don't retry inside this function, that's ai.js's job
+  }
+  module.exports = { generate, DEFAULT_MODEL };
+
+── 3. backend/ai.js ──
+  const providers = { gemini: require('./providers/gemini') };
+  // getApiKey() / setApiKey(rawKey) -- use Electron's safeStorage.encryptString/decryptString,
+  //   store only the encrypted, base64-encoded blob in the settings table; never plaintext,
+  //   never logged, never included in a thrown error's message
+
+  async function summarizeSource(sourceId) {
+    // fetch source.content, call generate() with a short system instruction telling the model
+    //   this is qualitative-research assistance and to summarize factually without adding
+    //   interpretation the text doesn't support, target 3-6 sentences, no jsonSchema needed
+    // memos.createMemo({ linkedType: 'source', linkedId: sourceId, text: summary }), then set
+    //   ai_generated = 1 on that row so it's always distinguishable from the researcher's own memos
+  }
+
+  async function suggestChildCodes(nodeId) {
+    // fetch the parent node plus its existing coded excerpts (reuse coding.getCodingsForSource
+    //   and the node-tree helpers from Session 4 -- don't reimplement traversal here)
+    // jsonSchema shape: { type: 'object', properties: { suggestions: { type: 'array', items: {
+    //   type: 'object', properties: {
+    //     name: { type: 'string' }, rationale: { type: 'string' },
+    //     evidence: { type: 'array', items: { type: 'object', properties: {
+    //       sourceId: { type: 'integer' }, startOffset: { type: 'integer' }, endOffset: { type: 'integer' }
+    //     }, required: ['sourceId','startOffset','endOffset'] } }
+    //   }, required: ['name','rationale','evidence'] } } }, required: ['suggestions'] }
+    // CRITICAL: once the model responds, re-validate every evidence offset against that source's
+    //   real content length -- clamp or drop any suggestion with an out-of-range offset instead
+    //   of trusting it. The model can and will hallucinate positions.
+    // insert one ai_suggestions row per suggestion, kind = 'child_code', status = 'pending'
+  }
+
+  async function resolveSuggestion(suggestionId, action) {
+    // action === 'accept': create the real node (coding.createNode) and the coding rows
+    //   (coding.applyCoding) for each evidence span, exactly as if a researcher had done it
+    //   by hand, then mark the suggestion row accepted
+    // action === 'reject': mark the row rejected, touch nothing else
+  }
+
+  // Rate limiting: a module-level queue that allows only 1 in-flight Gemini call at a time,
+  //   exponential backoff with jitter on RateLimitError (start around 2s, cap around 30s),
+  //   3 retries then surface { ok: false, error: 'rate_limited', retryAfterMs } up through
+  //   Session 10's wrap() shape instead of throwing raw. Free-tier limits on some models are
+  //   genuinely single digit to low teens requests per minute -- a burst of clicks will hit them.
+
+  module.exports = { getApiKey, setApiKey, summarizeSource, suggestChildCodes, listSuggestions, resolveSuggestion, testApiKey };
+
+── 4. IPC + preload (extends Session 10's pattern) ──
+  ipcMain.handle for: ai:summarizeSource, ai:suggestChildCodes, ai:listSuggestions, ai:resolveSuggestion,
+  ai:testApiKey (makes one cheap real call and returns ok/fail, so Session 17's settings screen can
+  confirm a pasted key actually works), settings:setAiApiKey (encrypts before storing, returns only
+  { ok: true }, never echoes the key back), settings:getAiConfig (returns { hasKey, provider, model,
+  enabled } -- never the decrypted key itself; the renderer should never hold the raw key in memory
+  longer than the moment the user types it in)
+
+On why this is a paste-a-free-key flow and not a "Sign in with Google" button: real OAuth would need
+a registered Google Cloud OAuth client, a consent screen, and Google's app-verification review before
+it worked for anyone beyond manually-added test accounts -- Google's own quickstart calls the API-key
+route the easiest way and treats OAuth as the stricter, more involved option. A free key from
+https://aistudio.google.com/apikey is a short copy-paste with no card required; Session 17's job is
+to make that feel like connecting an account in the UI even though the plumbing underneath is a key,
+not a token.
+
+Show the full contents of every new/changed file. Flag anything about the current @google/genai
+package's exact method or field names that you had to guess at rather than confirm against live docs,
+so I know what to double check before shipping.`;
+
+const p17 = `NAVAL-QDA Desktop — Session 17: AI-Assisted Coding — Suggestions UI & Settings. Build the frontend for Session 16's AI backend: a settings screen to connect a free Gemini key, and a review panel for AI suggestions that always requires a human accept or reject before anything touches real coding data. Upload your current frontend/src stores + App.tsx, electron/preload.js (Session 16 applied), and SourceTextViewer from Session 12.
+
+── 1. AiSettingsPanel ──
+  Masked password input for the key
+  "Get a free key" button -> a small api.system.openExternal(url) preload export wrapping
+    Electron's shell.openExternal, pointed at https://aistudio.google.com/apikey
+  "Test connection" -> api.ai.testApiKey() -> a green check or the specific error message
+  "Remove key" -> clears it
+  One short, plain-language paragraph: only the specific text you choose to summarize or get
+    suggestions for is ever sent to Google, nothing else in the project; free-tier requests may
+    be used by Google to improve their models per their terms, so treat this like any other
+    cloud service when your data is sensitive
+
+── 2. useAiStore (Zustand) ──
+  config: { hasKey, enabled, provider, model }, suggestions keyed by nodeId, loading/error state
+  per action -- same thin-actions-over-api.ai.* pattern as the other stores from Session 11
+  Every AI-dependent button elsewhere in the app (Summarize, Suggest codes) stays visibly disabled
+  with a "set up AI in Settings" hint until a tested key exists, rather than erroring when clicked
+  Nothing calls Gemini automatically -- no auto-summarize on import, no background polling. Every
+  call traces back to one specific button press, so a researcher on the free tier is never
+  surprised by where their daily quota went
+
+── 3. AiSuggestionsPanel (lives in the Coding Workspace from Session 12) ──
+  "Suggest child codes" button on a selected node in NodeTreeSidebar -> api.ai.suggestChildCodes(nodeId)
+  Pending suggestions list: name, one-line rationale, evidence chips -- clicking a chip scrolls
+    SourceTextViewer to that offset and flashes a highlight (reuse Session 12's offset-to-DOM
+    mapping, don't rebuild it)
+  Per suggestion: Accept (-> api.ai.resolveSuggestion(id, 'accept'), the new node and codings show
+    up in NodeTreeSidebar exactly like a manually created one), Edit-name-then-accept, Reject
+  "Accept all" for the impatient -- still resolved one at a time under the hood
+
+── 4. SummarizeButton ──
+  On SourceCard and the source detail view -> api.ai.summarizeSource(sourceId) -> on success,
+    open the memo it created
+  Anywhere memos are listed, show a small "AI" badge on rows where aiGenerated is true -- an AI
+    summary should never look indistinguishable from the researcher's own analytic memo
+
+── 5. Loading / error states ──
+  In flight: spinner + disabled button, not a frozen UI
+  Rate limited: surface the specific "retrying in Ns" state from the backend's retry loop, not a
+    generic spinner -- the person should know it's Google's free tier being slow, not a bug
+  No key configured: buttons stay disabled with the Settings hint, never an error after the fact
+
+Show the full contents of every new/changed file.`;
+
+document.getElementById('p1').textContent = p1;
+document.getElementById('p2').textContent = p2;
+document.getElementById('p3').textContent = p3;
+document.getElementById('p4').textContent = p4;
+document.getElementById('p5').textContent = p5;
+document.getElementById('p6').textContent = p6;
+document.getElementById('p7').textContent = p7;
+document.getElementById('p8').textContent = p8;
+document.getElementById('p9').textContent = p9;
+document.getElementById('p10').textContent = p10;
+document.getElementById('p11').textContent = p11;
+document.getElementById('p12').textContent = p12;
+document.getElementById('p13').textContent = p13;
+document.getElementById('p14').textContent = p14;
+document.getElementById('p15').textContent = p15;
+document.getElementById('p16').textContent = p16;
+document.getElementById('p17').textContent = p17;
+
+async function copyPrompt(btn, id) {
+  const text = document.getElementById(id).textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (_) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  }
+  const orig = btn.textContent;
+  btn.textContent = 'Copied ✓';
+  btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+}
+
+const cards = document.querySelectorAll('.session-card');
+const links  = document.querySelectorAll('#snav a');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+    }
+  });
+}, { rootMargin: '-15% 0px -75% 0px' });
+cards.forEach(c => obs.observe(c));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+{
+  "name": "naval-qda",
+  "version": "0.1.0",
+  "description": "NAVAL-QDA desktop application for qualitative data analysis",
+  "author": "NAVAL-QDA",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development concurrently \"npm run dev:frontend\" \"npm run dev:electron\"",
+    "dev:frontend": "npm --prefix frontend run dev -- --host 0.0.0.0",
+    "dev:electron": "wait-on http://127.0.0.1:5173 && electron .",
+    "build": "npm --prefix frontend run build && electron-builder",
+    "package:win": "electron-builder --win",
+    "package:mac": "electron-builder --mac",
+    "package:linux": "electron-builder --linux",
+    "release:win": "electron-builder --win --publish never",
+    "release:mac": "electron-builder --mac --publish never",
+    "release:linux": "electron-builder --linux --publish never"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.4",
+    "cross-env": "^10.1.0",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
+    "wait-on": "^9.1.0"
+  },
+  "dependencies": {
+    "pdf-parse": "^2.4.5",
+    "react-router-dom": "^7.18.2",
+    "yauzl": "^3.4.0",
+    "zustand": "^5.0.14"
+  }
+}
