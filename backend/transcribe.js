@@ -1,8 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const os = require('node:os');
 const { EventEmitter } = require('node:events');
-const { getDatabase } = require('./db');
+const { getDatabase, getUserDataPath } = require('./db');
 
 function ensureMediaDirectory(baseDir) {
   const mediaDir = path.join(baseDir, 'media');
@@ -12,8 +11,7 @@ function ensureMediaDirectory(baseDir) {
 
 function importMedia(filePath, projectId, title) {
   const db = getDatabase();
-  const appDir = path.join(db.name ? path.dirname(db.name) : os.tmpdir(), '..');
-  const mediaDir = ensureMediaDirectory(appDir);
+  const mediaDir = ensureMediaDirectory(getUserDataPath());
   const ext = path.extname(filePath) || '.bin';
   const fileName = `${Date.now()}-${Math.random().toString(16).slice(2)}${ext}`;
   const destination = path.join(mediaDir, fileName);

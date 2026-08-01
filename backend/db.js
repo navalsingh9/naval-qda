@@ -264,6 +264,13 @@ function getDatabase() {
   return dbInstance;
 }
 
+function getUserDataPath() {
+  if (!appContext?.getPath) {
+    throw new Error('Database has not been initialized yet.');
+  }
+  return appContext.getPath('userData');
+}
+
 function closeDatabase() {
   if (dbInstance) {
     dbInstance.close();
@@ -274,6 +281,7 @@ function closeDatabase() {
 module.exports = {
   initializeDatabase,
   getDatabase,
+  getUserDataPath,
   closeDatabase,
   schemaSql,
 };
