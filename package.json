@@ -2,7 +2,10 @@
   "name": "naval-qda",
   "version": "0.1.0",
   "description": "NAVAL-QDA desktop application for qualitative data analysis",
-  "author": "NAVAL-QDA",
+  "author": {
+    "name": "NAVAL-QDA",
+    "email": "support@navalqda.example"
+  },
   "private": true,
   "main": "electron/main.js",
   "scripts": {
