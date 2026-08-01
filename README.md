@@ -121,7 +121,7 @@ See [SECURITY.md](SECURITY.md) for the security policy, how to report a vulnerab
 
 ## License
 
-No license file is currently published for this repository — all rights reserved by default until one is added. If you intend for this to be open source, add a `LICENSE` file (e.g., MIT or Apache-2.0) so others know how they may use it.
+CC BY ND 4.0
 
 ---
 
