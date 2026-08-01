@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { SidebarLayout } from './components/SidebarLayout'
 import { CodingWorkspacePage } from './components/CodingWorkspacePage'
@@ -9,7 +9,7 @@ import { AiSettingsPanel } from './components/AiSettingsPanel'
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route element={<SidebarLayout />}>
           <Route index element={<Navigate to="/sources" replace />} />
@@ -21,7 +21,7 @@ function App() {
           <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
