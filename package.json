@@ -18,7 +18,8 @@
     "package:linux": "electron-builder --linux",
     "release:win": "electron-builder --win --publish never",
     "release:mac": "electron-builder --mac --publish never",
-    "release:linux": "electron-builder --linux --publish never"
+    "release:linux": "electron-builder --linux --publish never",
+    "test": "node --test \"backend/**/*.test.js\""
   },
   "devDependencies": {
     "concurrently": "^10.0.4",
@@ -29,7 +30,6 @@
   },
   "dependencies": {
     "pdf-parse": "^2.4.5",
-    "react-router-dom": "^7.18.2",
     "yauzl": "^3.4.0",
     "zustand": "^5.0.14"
   }

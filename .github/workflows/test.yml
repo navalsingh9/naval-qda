@@ -30,7 +30,7 @@ jobs:
         run: npm ci
 
       - name: Run backend test suite
-        run: node --test backend
+        run: npm test
 
   frontend-checks:
     name: Frontend lint & build
