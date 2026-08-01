@@ -121,7 +121,7 @@ See [SECURITY.md](SECURITY.md) for the security policy, how to report a vulnerab
 
 ## License
 
-CC BY-NC-ND 4.0 — NAVAL-QDA is source-available, maintainer-controlled software. Users may inspect, use, and share unmodified copies under the CC BY-NC-ND 4.0 license. Modified redistributions and commercial use are not permitted. Bug reports and pull requests are welcome, but only official releases published by the maintainer are authorized NAVAL-SEM distributions. https://creativecommons.org/licenses/by-nc-nd/4.0/ 
+CC BY-NC-ND 4.0 — NAVAL-QDA is source-available, maintainer-controlled software. Users may inspect, use, and share unmodified copies under the CC BY-NC-ND 4.0 license. Modified redistributions and commercial use are not permitted. Bug reports and pull requests are welcome, but only official releases published by the maintainer are authorized NAVAL-QDA distributions. https://creativecommons.org/licenses/by-nc-nd/4.0/ 
 
 ---
 
