@@ -11,8 +11,18 @@ files:
     to: electron
     filter:
       - '**/*'
+  - from: backend
+    to: backend
+    filter:
+      - '**/*'
+      - '!**/*.test.js'
   - package.json
   - package-lock.json
+  - node_modules/**/*
+# better-sqlite3 ships a native .node binary — Node cannot dlopen a native
+# addon from inside an asar archive, so it must be unpacked alongside it.
+asarUnpack:
+  - node_modules/better-sqlite3/**/*
 extraResources:
   - from: build/ffmpeg
     to: ffmpeg

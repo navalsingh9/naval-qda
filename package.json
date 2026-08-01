@@ -12,13 +12,14 @@
     "dev": "cross-env NODE_ENV=development concurrently \"npm run dev:frontend\" \"npm run dev:electron\"",
     "dev:frontend": "npm --prefix frontend run dev -- --host 0.0.0.0",
     "dev:electron": "wait-on http://127.0.0.1:5173 && electron .",
-    "build": "npm --prefix frontend run build && electron-builder",
-    "package:win": "electron-builder --win",
-    "package:mac": "electron-builder --mac",
-    "package:linux": "electron-builder --linux",
-    "release:win": "electron-builder --win --publish never",
-    "release:mac": "electron-builder --mac --publish never",
-    "release:linux": "electron-builder --linux --publish never",
+    "build:frontend": "npm --prefix frontend ci && npm --prefix frontend run build",
+    "build": "npm run build:frontend && electron-builder",
+    "package:win": "npm run build:frontend && electron-builder --win",
+    "package:mac": "npm run build:frontend && electron-builder --mac",
+    "package:linux": "npm run build:frontend && electron-builder --linux",
+    "release:win": "npm run build:frontend && electron-builder --win --publish never",
+    "release:mac": "npm run build:frontend && electron-builder --mac --publish never",
+    "release:linux": "npm run build:frontend && electron-builder --linux --publish never",
     "test": "node --test \"backend/**/*.test.js\""
   },
   "devDependencies": {
@@ -29,6 +30,7 @@
     "wait-on": "^9.1.0"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.2",
     "pdf-parse": "^2.4.5",
     "yauzl": "^3.4.0"
   }

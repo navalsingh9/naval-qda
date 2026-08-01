@@ -10,13 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "concurrently": "^10.0.4",
-    "electron": "^43.2.0",
-    "electron-builder": "^26.15.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",
-    "wait-on": "^9.1.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

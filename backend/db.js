@@ -228,7 +228,14 @@ function loadDatabaseConstructor() {
 
 function createDatabaseInstance(dbPath) {
   const databaseModule = loadDatabaseConstructor();
-  const DatabaseCtor = databaseModule.DatabaseSync || databaseModule.default?.DatabaseSync || databaseModule.Database || databaseModule.default;
+
+  // better-sqlite3's `module.exports` IS the constructor function itself.
+  // node:sqlite instead exposes a named export, `{ DatabaseSync }`.
+  // Check for the function case first or better-sqlite3 is never matched.
+  const DatabaseCtor =
+    typeof databaseModule === 'function'
+      ? databaseModule
+      : databaseModule.DatabaseSync || databaseModule.default?.DatabaseSync || databaseModule.Database || databaseModule.default;
 
   if (!DatabaseCtor) {
     throw new Error('Unable to locate a compatible SQLite constructor.');

@@ -34,13 +34,17 @@ function createWindow() {
     },
   });
 
-  const devServerUrl = 'http://localhost:5173';
-  const loadUrl = isDev ? devServerUrl : `file://${path.join(__dirname, '..', 'frontend', 'dist', 'index.html')}`;
-
-  mainWindow.loadURL(loadUrl);
-
   if (isDev) {
+    mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools({ mode: 'detach' });
+  } else {
+    // electron-builder copies frontend/dist's contents to the app root
+    // (see files: "from: frontend/dist, to: ." in electron-builder.yml),
+    // so from electron/main.js the built index.html lives one level up.
+    // loadFile (not a hand-built file:// URL) is required here — a manual
+    // `file://${path}` string breaks on Windows because path.join uses
+    // backslashes and the URL is missing the extra leading slash.
+    mainWindow.loadFile(path.join(__dirname, '..', 'index.html'));
   }
 }
 
