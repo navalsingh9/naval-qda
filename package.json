@@ -30,7 +30,6 @@
   },
   "dependencies": {
     "pdf-parse": "^2.4.5",
-    "yauzl": "^3.4.0",
-    "zustand": "^5.0.14"
+    "yauzl": "^3.4.0"
   }
 }

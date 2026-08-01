@@ -16,7 +16,8 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2",
-    "wait-on": "^9.1.0"
+    "wait-on": "^9.1.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
