@@ -26,76 +26,6 @@
 | Packaging  | `electron-builder` (Windows NSIS, macOS DMG, Linux AppImage/deb) |
 | Tests      | Node's built-in `node:test` runner |
 
-## Project structure
-
-```
-naval-qda/
-├── backend/          # Data layer + business logic (runs in the Electron main process)
-│   ├── db.js         # SQLite schema, migrations, connection
-│   ├── sources.js     # Import & text extraction (.txt/.docx/.pdf)
-│   ├── coding.js       # Node tree + coding operations
-│   ├── memos.js       # Memos, cases, attributes
-│   ├── query.js       # Text search, word frequency, coding queries
-│   ├── visualize.js  # Word cloud / treemap / clustering data
-│   ├── transcribe.js  # Media import + transcription jobs
-│   ├── report.js      # Coding & project summary reports
-│   ├── ai.js          # AI provider settings + summarization/suggestions
-│   └── *.test.js      # Unit tests (node:test) alongside each module
-├── electron/
-│   ├── main.js        # App entrypoint, window creation, IPC handlers
-│   └── preload.js     # contextBridge API exposed to the renderer
-├── frontend/          # React + Vite renderer app
-│   └── src/
-│       ├── components/
-│       └── stores/     # Zustand stores
-├── build/             # Icons + bundled ffmpeg/whisper binaries for packaging
-├── scripts/           # Icon generation helpers
-└── electron-builder.yml
-```
-
-## Getting started
-
-### Prerequisites
-
-- Node.js **20+** (Node 22 recommended — the app can use Node's built-in `node:sqlite` if `better-sqlite3` isn't available for your platform)
-- npm
-
-### Install
-
-```bash
-git clone https://github.com/navalsingh9/naval-qda.git
-cd naval-qda
-npm install
-npm --prefix frontend install
-```
-
-### Run in development
-
-```bash
-npm run dev
-```
-
-This starts the Vite dev server for the frontend and launches Electron pointed at it, with DevTools open.
-
-### Available scripts
-
-| Command                | Description                                      |
-|-------------------------|---------------------------------------------------|
-| `npm run dev`            | Run frontend (Vite) + Electron together in dev mode |
-| `npm run build`          | Build the frontend and package the app with `electron-builder` |
-| `npm run package:win/mac/linux` | Build a platform-specific installer |
-| `npm run release:win/mac/linux` | Same as `package:*`, without publishing |
-| `npm --prefix frontend run lint` | Lint the frontend with `oxlint` |
-
-## Testing
-
-Backend modules are tested with Node's built-in test runner. Run all backend tests with:
-
-```bash
-node --test backend
-```
-
-> Consider adding this as an npm `test` script (`"test": "node --test backend"`) and wiring it into CI — see [Suggested improvements](#suggested-improvements) below.
 
 ## AI features (optional)
 
@@ -125,12 +55,4 @@ CC BY-NC-ND 4.0 — NAVAL-QDA is source-available, maintainer-controlled softwar
 
 ---
 
-## Suggested improvements
 
-*(You can delete this section once you've triaged it — it's a working checklist, not part of the public docs.)*
-
-- [ ] Add an npm `test` script and a CI workflow that runs it on every push/PR (none exists today — only the release workflow runs on tags).
-- [ ] Add a `LICENSE` file.
-- [ ] Route file selection through Electron's native `dialog.showOpenDialog` in the main process rather than accepting a raw `filePath` string over IPC from the renderer, to avoid an arbitrary-file-read surface if the renderer is ever compromised.
-- [ ] Add `.env.example` documenting `GEMINI_API_KEY` (and any others) since `.env` is git-ignored but undocumented.
-- [ ] Pin GitHub Actions to commit SHAs (or Dependabot-managed versions) rather than floating major-version tags.
