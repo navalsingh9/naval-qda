@@ -40,8 +40,6 @@ jobs:
             dist/*.dmg
             dist/*.AppImage
             dist/*.deb
-            dist/*.blockmap
-            dist/*.yml
 
   release:
     needs: build
