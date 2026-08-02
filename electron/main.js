@@ -140,7 +140,21 @@ ipcMain.handle('visualize:clusterByWordSimilarity', (_event, payload) => cluster
 ipcMain.handle('visualize:clusterByCodingSimilarity', (_event, payload) => clusterByCodingSimilarity(payload));
 
 ipcMain.handle('transcribe:importMedia', (_event, payload) => importMedia(payload.filePath, payload.projectId, payload.title));
-ipcMain.handle('transcribe:createJob', (_event, payload) => createTranscriptionJob(payload.sourceId, payload.modelSize));
+ipcMain.handle('transcribe:createJob', (event, payload) => {
+  // The job's EventEmitter can't cross the IPC boundary (it isn't
+  // structured-clonable), so we forward its events over webContents.send
+  // and only return a plain, serializable descriptor to the renderer.
+  const job = createTranscriptionJob(payload.sourceId, payload.modelSize);
+  const sender = event.sender;
+
+  job.emitter.on('progress', (update) => {
+    if (!sender.isDestroyed()) {
+      sender.send('transcription:progress', update);
+    }
+  });
+
+  return { sourceId: job.sourceId, modelSize: job.modelSize, status: job.status };
+});
 ipcMain.handle('transcribe:updateSegment', (_event, payload) => updateTranscriptSegment(payload.sourceId, payload.segmentIndex, payload.newText));
 
 ipcMain.handle('report:coding', (_event, nodeId) => generateCodingReport(nodeId));

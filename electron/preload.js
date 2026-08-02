@@ -55,6 +55,14 @@ contextBridge.exposeInMainWorld('api', {
     importMedia: (payload) => ipcRenderer.invoke('transcribe:importMedia', payload),
     createJob: (payload) => ipcRenderer.invoke('transcribe:createJob', payload),
     updateSegment: (payload) => ipcRenderer.invoke('transcribe:updateSegment', payload),
+    // Subscribe to progress updates for a running job. Returns an
+    // unsubscribe function; call it (e.g. on component unmount) to avoid
+    // leaking listeners across job runs.
+    onProgress: (callback) => {
+      const listener = (_event, update) => callback(update);
+      ipcRenderer.on('transcription:progress', listener);
+      return () => ipcRenderer.removeListener('transcription:progress', listener);
+    },
   },
   report: {
     coding: (nodeId) => ipcRenderer.invoke('report:coding', nodeId),
