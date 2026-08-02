@@ -32,6 +32,10 @@ contextBridge.exposeInMainWorld('api', {
     linkSource: (sourceId, caseId) => ipcRenderer.invoke('cases:linkSource', sourceId, caseId),
     getClassificationSheet: (projectId) => ipcRenderer.invoke('cases:getClassificationSheet', projectId),
   },
+  coders: {
+    create: (payload) => ipcRenderer.invoke('coders:create', payload),
+    list: (projectId) => ipcRenderer.invoke('coders:list', projectId),
+  },
   query: {
     textSearch: (payload) => ipcRenderer.invoke('query:textSearch', payload),
     wordFrequency: (payload) => ipcRenderer.invoke('query:wordFrequency', payload),

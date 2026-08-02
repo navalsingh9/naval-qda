@@ -2,10 +2,11 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { SidebarLayout } from './components/SidebarLayout'
 import { CodingWorkspacePage } from './components/CodingWorkspacePage'
-import { PlaceholderPage } from './components/PlaceholderPage'
 import { ProjectSourcePage } from './components/ProjectSourcePage'
 import { QueryWorkspacePage } from './components/QueryWorkspacePage'
+import { VisualizationsPage } from './components/VisualizationsPage'
 import { AiSettingsPanel } from './components/AiSettingsPanel'
+import { ReportsPage } from './components/ReportsPage'
 
 function App() {
   return (
@@ -16,8 +17,9 @@ function App() {
           <Route path="/sources" element={<ProjectSourcePage />} />
           <Route path="/coding" element={<CodingWorkspacePage />} />
           <Route path="/query" element={<QueryWorkspacePage />} />
+          <Route path="/visualizations" element={<VisualizationsPage />} />
           <Route path="/ai" element={<AiSettingsPanel />} />
-          <Route path="/reports" element={<PlaceholderPage title="Reports" />} />
+          <Route path="/reports" element={<ReportsPage />} />
         </Route>
       </Routes>
     </HashRouter>

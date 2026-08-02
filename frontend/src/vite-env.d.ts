@@ -32,6 +32,10 @@ declare global {
         linkSource: (sourceId: number, caseId: number) => Promise<unknown>
         getClassificationSheet: (projectId: number) => Promise<unknown>
       }
+      coders: {
+        create: (payload: { projectId: number; name: string }) => Promise<{ id: number; projectId: number; name: string }>
+        list: (projectId: number) => Promise<Array<{ id: number; projectId: number; name: string; createdAt: string }>>
+      }
       query: {
         textSearch: (payload: unknown) => Promise<unknown>
         wordFrequency: (payload: unknown) => Promise<unknown>

@@ -29,6 +29,7 @@ export function SidebarLayout() {
           <NavLink to="/sources">Sources</NavLink>
           <NavLink to="/coding">Coding</NavLink>
           <NavLink to="/query">Query</NavLink>
+          <NavLink to="/visualizations">Visualizations</NavLink>
           <NavLink to="/ai">AI</NavLink>
           <NavLink to="/reports">Reports</NavLink>
         </nav>

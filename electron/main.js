@@ -14,6 +14,7 @@ const {
   linkSourceToCase,
   getClassificationSheet,
 } = require('../backend/memos');
+const { createCoder, listCoders } = require('../backend/coders');
 const { textSearch, wordFrequency, codingQuery, matrixCodingQuery, codingComparison, interpretKappa } = require('../backend/query');
 const { wordCloudData, hierarchyChartData, buildFeatureVectors, clusterByWordSimilarity, clusterByCodingSimilarity } = require('../backend/visualize');
 const { importMedia, createTranscriptionJob, updateTranscriptSegment } = require('../backend/transcribe');
@@ -121,6 +122,9 @@ ipcMain.handle('attributes:create', (_event, payload) => createAttribute(payload
 ipcMain.handle('cases:setAttributeValue', (_event, payload) => setCaseAttributeValue(payload));
 ipcMain.handle('cases:linkSource', (_event, sourceId, caseId) => linkSourceToCase(sourceId, caseId));
 ipcMain.handle('cases:getClassificationSheet', (_event, projectId) => getClassificationSheet(projectId));
+
+ipcMain.handle('coders:create', (_event, payload) => createCoder(payload));
+ipcMain.handle('coders:list', (_event, projectId) => listCoders(projectId));
 
 ipcMain.handle('query:textSearch', (_event, payload) => textSearch(payload));
 ipcMain.handle('query:wordFrequency', (_event, payload) => wordFrequency(payload));
