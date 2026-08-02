@@ -15,7 +15,6 @@ function App() {
           <Route index element={<Navigate to="/sources" replace />} />
           <Route path="/sources" element={<ProjectSourcePage />} />
           <Route path="/coding" element={<CodingWorkspacePage />} />
-          <Route path="/nodes" element={<PlaceholderPage title="Nodes" />} />
           <Route path="/query" element={<QueryWorkspacePage />} />
           <Route path="/ai" element={<AiSettingsPanel />} />
           <Route path="/reports" element={<PlaceholderPage title="Reports" />} />

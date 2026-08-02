@@ -9,7 +9,7 @@ type Suggestion = {
 
 export function AiSettingsPanel() {
   const { selectedProjectId } = useProjectStore()
-  const [provider, setProvider] = useState('mock')
+  const [provider, setProvider] = useState('gemini')
   const [apiKey, setApiKey] = useState('')
   const [summary, setSummary] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
@@ -21,7 +21,7 @@ export function AiSettingsPanel() {
       try {
         const storedProvider = await window.api.ai.getSetting('ai.provider') as string | null
         const storedApiKey = await window.api.ai.getSetting('ai.apiKey') as string | null
-        setProvider(storedProvider || 'mock')
+        setProvider(storedProvider || 'gemini')
         setApiKey(storedApiKey || '')
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
@@ -85,14 +85,17 @@ export function AiSettingsPanel() {
           <label className="field-label">
             Provider
             <select value={provider} onChange={(event) => setProvider(event.target.value)}>
-              <option value="mock">Mock</option>
               <option value="gemini">Gemini</option>
+              <option value="mistral" disabled>Mistral (coming soon)</option>
             </select>
           </label>
           <label className="field-label">
             API key
-            <input value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="Optional for mock mode" />
+            <input value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="Paste your Gemini API key" />
           </label>
+          <p className="description">
+            Without a key, AI features fall back to a local offline placeholder so the rest of the app stays usable. Only the specific text you summarize or request suggestions for is ever sent to the provider.
+          </p>
           <button type="button" onClick={() => void handleSave()} disabled={loading}>Save settings</button>
         </div>
 

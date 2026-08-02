@@ -122,6 +122,14 @@ select {
   font: inherit;
 }
 
+input[type="checkbox"] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  accent-color: #4c6ef5;
+}
+
 button {
   border: none;
   border-radius: 10px;

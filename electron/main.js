@@ -27,11 +27,18 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
+    title: `NAVAL-QDA v${app.getVersion()}`,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+
+  // The page's <title> tag (currently "frontend", Vite's default) would
+  // otherwise override the title set above as soon as the page loads.
+  mainWindow.on('page-title-updated', (event) => {
+    event.preventDefault();
   });
 
   if (isDev) {

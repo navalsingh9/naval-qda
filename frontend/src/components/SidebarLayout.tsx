@@ -28,7 +28,6 @@ export function SidebarLayout() {
         <nav className="sidebar-nav">
           <NavLink to="/sources">Sources</NavLink>
           <NavLink to="/coding">Coding</NavLink>
-          <NavLink to="/nodes">Nodes</NavLink>
           <NavLink to="/query">Query</NavLink>
           <NavLink to="/ai">AI</NavLink>
           <NavLink to="/reports">Reports</NavLink>
