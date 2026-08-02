@@ -32,17 +32,30 @@ function getAiConfig() {
 
 // ---- Provider calls ----
 // NOTE: this hits the REST endpoint directly (no @google/genai SDK dependency,
-// Electron's Node runtime already has global fetch). Model name and response
-// shape below are best-effort from the public Gemini REST docs and have NOT
-// been verified against a live API key — test with a real key before shipping,
-// and check https://ai.google.dev/api/generate-content if it errors.
-async function callGemini({ apiKey, prompt }) {
-  const model = 'gemini-2.0-flash';
+// Electron's Node runtime already has global fetch).
+//
+// gemini-3.5-flash is a reasoning model — its "thinking" tokens count against
+// maxOutputTokens, so without an explicit generationConfig, longer prompts
+// can silently come back empty (the whole budget gets consumed by reasoning
+// before any output text is produced). thinkingLevel: 'low' keeps latency/
+// cost down for the short, non-analytical tasks this app uses it for
+// (summaries, code suggestions) — thinking can't be fully disabled on this
+// model family, only reduced.
+async function callGemini({ apiKey, prompt, responseMimeType }) {
+  const model = 'gemini-3.5-flash';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const generationConfig = {
+    maxOutputTokens: 2048,
+    thinkingConfig: { thinkingLevel: 'low' },
+  };
+  if (responseMimeType) {
+    generationConfig.responseMimeType = responseMimeType;
+  }
+
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig }),
   });
   if (!response.ok) {
     const body = await response.text().catch(() => '');
@@ -68,7 +81,7 @@ const PROVIDERS = {
     },
     async suggestCodes({ apiKey, text, nodeName, maxSuggestions }) {
       const prompt = `You are assisting qualitative coding under the parent code "${nodeName}". Suggest up to ${maxSuggestions} child codes for the text below. Respond with ONLY strict JSON: an array of {"name": string, "evidence": string, "confidence": number 0-1}. No prose, no markdown fences.\n\nText:\n${text.slice(0, 6000)}`;
-      const raw = await callGemini({ apiKey, prompt });
+      const raw = await callGemini({ apiKey, prompt, responseMimeType: 'application/json' });
       const cleaned = raw.replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(cleaned);
       if (!Array.isArray(parsed)) {
