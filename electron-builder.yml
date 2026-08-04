@@ -34,6 +34,12 @@ win:
       arch:
         - x64
   icon: build/icon.png
+nsis:
+  # electron-builder's default NSIS uninstaller leaves the app's userData
+  # folder (and with it navalqda.db) behind after uninstall, which is what
+  # made projects/sources appear to survive an uninstall+reinstall. This
+  # makes "uninstall" actually mean uninstall.
+  deleteAppDataOnUninstall: true
 mac:
   target:
     - target: dmg

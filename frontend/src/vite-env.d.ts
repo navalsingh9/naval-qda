@@ -7,6 +7,7 @@ declare global {
       getPathForFile: (file: File) => string
       createProject: (name: string) => Promise<{ id: number; name: string }>
       listProjects: () => Promise<Array<{ id: number; name: string; created_at: string }>>
+      deleteProject: (projectId: number) => Promise<{ deleted: boolean }>
       importSource: (input: { projectId: number; title: string; filePath: string }) => Promise<{ id: number; title: string; filePath: string }>
       getSource: (sourceId: number) => Promise<{ id: number; projectId: number; title: string; filePath: string; content: string; paragraphOffsets: string; createdAt: string }>
       listSources: (projectId: number) => Promise<Array<{ id: number; title: string; file_path: string; created_at: string }>>

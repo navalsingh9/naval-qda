@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('api', {
   getPathForFile: (file) => webUtils.getPathForFile(file),
   createProject: (name) => ipcRenderer.invoke('projects:create', name),
   listProjects: () => ipcRenderer.invoke('projects:list'),
+  deleteProject: (projectId) => ipcRenderer.invoke('projects:delete', projectId),
   importSource: ({ projectId, title, filePath }) => ipcRenderer.invoke('sources:import', { projectId, title, filePath }),
   importMedia: ({ projectId, title, filePath }) => ipcRenderer.invoke('sources:importMedia', { projectId, title, filePath }),
   getSource: (sourceId) => ipcRenderer.invoke('sources:get', sourceId),

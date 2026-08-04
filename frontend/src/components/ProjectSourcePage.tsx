@@ -5,8 +5,9 @@ import { useSourceStore } from '../stores/useSourceStore'
 
 export function ProjectSourcePage() {
   const { selectedProjectId, createProject, loadProjects, error: projectError, clearError: clearProjectError } = useProjectStore()
-  const { sources, loading, error: sourceError, loadSources, importSource, clearError: clearSourceError } = useSourceStore()
+  const { sources, loading, error: sourceError, loadSources, importSources, clearError: clearSourceError } = useSourceStore()
   const [projectName, setProjectName] = useState('')
+  const [isDraggingOver, setIsDraggingOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -30,10 +31,29 @@ export function ProjectSourcePage() {
   }
 
   const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file || !selectedProjectId) return
-    await importSource(selectedProjectId, file)
+    const files = event.target.files
+    if (!files || files.length === 0 || !selectedProjectId) return
+    await importSources(selectedProjectId, files)
     event.target.value = ''
+  }
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!selectedProjectId) return
+    event.preventDefault()
+    setIsDraggingOver(true)
+  }
+
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDraggingOver(false)
+  }
+
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    setIsDraggingOver(false)
+    const files = event.dataTransfer.files
+    if (!files || files.length === 0 || !selectedProjectId) return
+    await importSources(selectedProjectId, files)
   }
 
   return (
@@ -48,7 +68,7 @@ export function ProjectSourcePage() {
         </button>
       </div>
 
-      <input ref={fileInputRef} type="file" accept=".txt,.docx,.pdf" hidden onChange={handleFileSelected} />
+      <input ref={fileInputRef} type="file" accept=".txt,.docx,.pdf" multiple hidden onChange={handleFileSelected} />
 
       <div className="panel-grid">
         <div className="panel">
@@ -63,7 +83,12 @@ export function ProjectSourcePage() {
           {projectError ? <button type="button" className="ghost-button" onClick={() => clearProjectError()}>Dismiss</button> : null}
         </div>
 
-        <div className="panel">
+        <div
+          className={`panel drop-zone${isDraggingOver ? ' drop-zone-active' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={(event) => void handleDrop(event)}
+        >
           <h3>Imported sources</h3>
           {sourceError ? <p className="error-text">{sourceError}</p> : null}
           {sourceError ? <button type="button" className="ghost-button" onClick={() => clearSourceError()}>Dismiss</button> : null}
@@ -74,7 +99,11 @@ export function ProjectSourcePage() {
                 <span>{source.file_path}</span>
               </li>
             ))}
-            {!sources.length && !loading ? <li className="empty">No sources imported yet.</li> : null}
+            {!sources.length && !loading ? (
+              <li className="empty">
+                {selectedProjectId ? 'No sources imported yet. Drag files here, or use Import source.' : 'Select a project first.'}
+              </li>
+            ) : null}
           </ul>
         </div>
       </div>

@@ -91,6 +91,16 @@ ipcMain.handle('projects:list', () => {
   return db.prepare('SELECT id, name, created_at FROM projects ORDER BY id ASC').all();
 });
 
+ipcMain.handle('projects:delete', (_event, projectId) => {
+  const db = getDatabase();
+  // Every child table (sources, nodes, coders, codings, cases, attributes,
+  // memos, ...) declares its project_id foreign key with ON DELETE CASCADE,
+  // and initializeDatabase turns on `PRAGMA foreign_keys = ON`, so deleting
+  // the project row is enough to clean up everything under it.
+  const result = db.prepare('DELETE FROM projects WHERE id = ?').run(projectId);
+  return { deleted: result.changes > 0 };
+});
+
 ipcMain.handle('sources:list', (_event, projectId) => {
   const db = getDatabase();
   return db.prepare('SELECT id, title, file_path, created_at FROM sources WHERE project_id = ? ORDER BY id ASC').all(projectId);

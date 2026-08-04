@@ -13,6 +13,7 @@ type ProjectStore = {
   error: string | null
   loadProjects: () => Promise<void>
   createProject: (name: string) => Promise<void>
+  deleteProject: (projectId: number) => Promise<void>
   selectProject: (projectId: number | null) => void
   clearError: () => void
 }
@@ -47,6 +48,21 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         selectedProjectId: created.id,
         loading: false,
       }))
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error), loading: false })
+    }
+  },
+  deleteProject: async (projectId) => {
+    set({ loading: true, error: null })
+    try {
+      await window.api.deleteProject(projectId)
+      set((state) => {
+        const projects = state.projects.filter((project) => project.id !== projectId)
+        const selectedProjectId = state.selectedProjectId === projectId
+          ? (projects[0]?.id ?? null)
+          : state.selectedProjectId
+        return { projects, selectedProjectId, loading: false }
+      })
     } catch (error) {
       set({ error: error instanceof Error ? error.message : String(error), loading: false })
     }

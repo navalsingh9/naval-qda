@@ -53,6 +53,49 @@
   color: #3730a3;
 }
 
+.project-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.project-row button {
+  width: auto;
+}
+
+.project-row button:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-delete-button {
+  width: auto;
+  flex: none;
+  padding: 0.7rem 0.9rem;
+  color: #b91c1c;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.project-delete-button:hover {
+  border-color: #b91c1c;
+  background: #fef2f2;
+}
+
+.project-delete-confirm {
+  border: 1px solid #fca5a5;
+  border-radius: 10px;
+  padding: 0.6rem;
+  background: #fef2f2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #7f1d1d;
+}
+
 .sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -105,6 +148,15 @@
   border-radius: 16px;
   padding: 1rem;
   background: #f8faff;
+}
+
+.drop-zone {
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.drop-zone-active {
+  border-color: #4c6ef5;
+  background: #eef1ff;
 }
 
 .inline-form {
