@@ -30,7 +30,12 @@ export const useSourceStore = create<SourceStore>((set) => ({
     }
   },
   importSource: async (projectId, file) => {
-    const filePath = (file as File & { path?: string }).path || file.name
+    // Electron's contextIsolation strips the old `.path` shortcut from
+    // File objects handed to the renderer, so the real filesystem path has
+    // to come from the preload's webUtils.getPathForFile bridge instead.
+    // Falling back to file.name would silently resolve relative to the
+    // app's working directory, which is the bug this fixes.
+    const filePath = window.api.getPathForFile(file)
     set({ loading: true, error: null })
     try {
       const imported = await window.api.importSource({

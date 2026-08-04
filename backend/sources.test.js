@@ -7,7 +7,7 @@ const path = require('node:path');
 const { initializeDatabase, closeDatabase } = require('./db');
 const { importSourceFile, buildParagraphIndex } = require('./sources');
 
-test('importSourceFile ingests text files and indexes paragraphs', () => {
+test('importSourceFile ingests text files and indexes paragraphs', async () => {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'naval-qda-sources-'));
 
   const db = initializeDatabase({
@@ -23,7 +23,7 @@ test('importSourceFile ingests text files and indexes paragraphs', () => {
   const sourceFile = path.join(tmpDir, 'notes.txt');
   fs.writeFileSync(sourceFile, 'First paragraph.\n\nSecond paragraph.');
 
-  const source = importSourceFile({
+  const source = await importSourceFile({
     projectId,
     title: 'Imported notes',
     filePath: sourceFile,

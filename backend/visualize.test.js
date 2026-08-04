@@ -22,7 +22,7 @@ function makeTempApp() {
   };
 }
 
-test('visualization helpers produce word-cloud, hierarchy, and clustering data', () => {
+test('visualization helpers produce word-cloud, hierarchy, and clustering data', async () => {
   const { app } = makeTempApp();
   initializeDatabase(app);
 
@@ -32,7 +32,7 @@ test('visualization helpers produce word-cloud, hierarchy, and clustering data',
 
   const sourceFile = path.join(os.tmpdir(), `visualize-source-${Date.now()}.txt`);
   fs.writeFileSync(sourceFile, 'Alpha beta gamma alpha delta beta.');
-  importSourceFile({ projectId, title: 'Source A', filePath: sourceFile });
+  await importSourceFile({ projectId, title: 'Source A', filePath: sourceFile });
 
   const child = createNode({ projectId, name: 'Child' });
   createNode({ projectId, name: 'Parent' });

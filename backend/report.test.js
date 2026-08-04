@@ -23,7 +23,7 @@ function makeTempApp() {
   };
 }
 
-test('report helpers assemble coding and project summaries', () => {
+test('report helpers assemble coding and project summaries', async () => {
   const { app } = makeTempApp();
   initializeDatabase(app);
 
@@ -33,7 +33,7 @@ test('report helpers assemble coding and project summaries', () => {
 
   const sourceFile = path.join(os.tmpdir(), `report-source-${Date.now()}.txt`);
   fs.writeFileSync(sourceFile, 'Alpha beta gamma');
-  const source = importSourceFile({ projectId, title: 'Source A', filePath: sourceFile });
+  const source = await importSourceFile({ projectId, title: 'Source A', filePath: sourceFile });
 
   db.prepare('INSERT INTO coders (project_id, name) VALUES (?, ?)').run(projectId, 'Coder A');
   const coderId = db.prepare('SELECT last_insert_rowid() AS id').get().id;

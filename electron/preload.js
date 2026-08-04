@@ -1,7 +1,14 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
   ping: () => ipcRenderer.invoke('ping'),
+  // With contextIsolation/sandbox enabled, File objects handed to the
+  // renderer by <input type="file"> no longer carry a filesystem `.path`
+  // (Electron removed that for security reasons). webUtils.getPathForFile
+  // is the supported replacement, but it must be called from the preload
+  // script — it can't be exposed as a plain value, only as a function that
+  // takes the File object itself.
+  getPathForFile: (file) => webUtils.getPathForFile(file),
   createProject: (name) => ipcRenderer.invoke('projects:create', name),
   listProjects: () => ipcRenderer.invoke('projects:list'),
   importSource: ({ projectId, title, filePath }) => ipcRenderer.invoke('sources:import', { projectId, title, filePath }),
