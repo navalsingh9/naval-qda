@@ -32,7 +32,7 @@ function makeTempApp() {
   };
 }
 
-test('memo and case classification flows work end to end', () => {
+test('memo and case classification flows work end to end', async () => {
   const { app } = makeTempApp();
   initializeDatabase(app);
 
@@ -42,7 +42,7 @@ test('memo and case classification flows work end to end', () => {
 
   const sourceFile = path.join(os.tmpdir(), `memos-source-${Date.now()}.txt`);
   fs.writeFileSync(sourceFile, 'Alpha beta gamma');
-  const source = importSourceFile({ projectId, title: 'Source A', filePath: sourceFile });
+  const source = await importSourceFile({ projectId, title: 'Source A', filePath: sourceFile });
   const node = createNode({ projectId, name: 'Theme' });
 
   const memo = createMemo({

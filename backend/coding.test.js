@@ -30,7 +30,7 @@ function makeTempApp() {
   };
 }
 
-test('applyCoding, removeCoding, and percentCoded behave as expected', () => {
+test('applyCoding, removeCoding, and percentCoded behave as expected', async () => {
   const { app } = makeTempApp();
   initializeDatabase(app);
 
@@ -42,7 +42,7 @@ test('applyCoding, removeCoding, and percentCoded behave as expected', () => {
 
   const sourceFile = path.join(os.tmpdir(), `coding-source-${Date.now()}.txt`);
   fs.writeFileSync(sourceFile, 'Alpha beta gamma');
-  const source = importSourceFile({ projectId, title: 'Sample', filePath: sourceFile });
+  const source = await importSourceFile({ projectId, title: 'Sample', filePath: sourceFile });
 
   const node = createNode({ projectId, name: 'Theme' });
 
@@ -71,7 +71,7 @@ test('applyCoding, removeCoding, and percentCoded behave as expected', () => {
   closeDatabase();
 });
 
-test('node tree operations support move and merge', () => {
+test('node tree operations support move and merge', async () => {
   const { app } = makeTempApp();
   initializeDatabase(app);
   const db = require('./db').getDatabase();

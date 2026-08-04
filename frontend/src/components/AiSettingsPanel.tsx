@@ -7,6 +7,18 @@ type Suggestion = {
   confidence: number
 }
 
+type NodeTreeItem = {
+  id: number
+  name: string
+  children: NodeTreeItem[]
+}
+
+// Flatten the coding-node tree so we can pick a real node id to preview
+// suggestions against, instead of assuming one exists.
+function flattenNodes(nodes: NodeTreeItem[]): NodeTreeItem[] {
+  return nodes.flatMap((node) => [node, ...flattenNodes(node.children ?? [])])
+}
+
 export function AiSettingsPanel() {
   const { selectedProjectId } = useProjectStore()
   const [provider, setProvider] = useState('gemini')
@@ -59,9 +71,24 @@ export function AiSettingsPanel() {
         return
       }
 
+      // Summarizing and suggesting are independent calls — show the summary
+      // as soon as it comes back instead of waiting on suggestChildCodes too,
+      // so a later failure there doesn't swallow a summary that succeeded.
       const summaryResult = await window.api.ai.summarizeSource({ sourceId: firstSource.id }) as { summary: string }
-      const suggestionResult = await window.api.ai.suggestChildCodes({ sourceId: firstSource.id, nodeId: 1, maxSuggestions: 3 }) as Suggestion[]
       setSummary(summaryResult.summary)
+
+      // suggestChildCodes needs a real coding node to attach suggestions
+      // under — there's no fixed "first" node id, so look up whatever
+      // nodes this project actually has instead of guessing one.
+      const nodeTree = await window.api.coding.getNodeTree(selectedProjectId) as NodeTreeItem[]
+      const [firstNode] = flattenNodes(nodeTree ?? [])
+      if (!firstNode) {
+        setSuggestions([])
+        setError('Create a coding node first to preview AI-suggested child codes.')
+        return
+      }
+
+      const suggestionResult = await window.api.ai.suggestChildCodes({ sourceId: firstSource.id, nodeId: firstNode.id, maxSuggestions: 3 }) as Suggestion[]
       setSuggestions(suggestionResult)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))

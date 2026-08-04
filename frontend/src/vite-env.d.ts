@@ -4,6 +4,7 @@ declare global {
   interface Window {
     api: {
       ping: () => Promise<string>
+      getPathForFile: (file: File) => string
       createProject: (name: string) => Promise<{ id: number; name: string }>
       listProjects: () => Promise<Array<{ id: number; name: string; created_at: string }>>
       importSource: (input: { projectId: number; title: string; filePath: string }) => Promise<{ id: number; title: string; filePath: string }>

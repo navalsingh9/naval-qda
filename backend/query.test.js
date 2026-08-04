@@ -23,7 +23,7 @@ function makeTempApp() {
   };
 }
 
-test('text search, word frequency, and coding query work end to end', () => {
+test('text search, word frequency, and coding query work end to end', async () => {
   const { app } = makeTempApp();
   initializeDatabase(app);
 
@@ -33,7 +33,7 @@ test('text search, word frequency, and coding query work end to end', () => {
 
   const sourceFile = path.join(os.tmpdir(), `query-source-${Date.now()}.txt`);
   fs.writeFileSync(sourceFile, 'Alpha beta gamma alpha delta the epsilon beta.');
-  const source = importSourceFile({ projectId, title: 'Source A', filePath: sourceFile });
+  const source = await importSourceFile({ projectId, title: 'Source A', filePath: sourceFile });
 
   db.prepare('INSERT INTO coders (project_id, name) VALUES (?, ?)').run(projectId, 'Coder A');
   const coderId = db.prepare('SELECT last_insert_rowid() AS id').get().id;
@@ -70,7 +70,7 @@ test('text search, word frequency, and coding query work end to end', () => {
   closeDatabase();
 });
 
-test('matrix queries and kappa interpretation work for coding comparisons', () => {
+test('matrix queries and kappa interpretation work for coding comparisons', async () => {
   const { app } = makeTempApp();
   initializeDatabase(app);
 
@@ -80,7 +80,7 @@ test('matrix queries and kappa interpretation work for coding comparisons', () =
 
   const sourceFile = path.join(os.tmpdir(), `query-matrix-${Date.now()}.txt`);
   fs.writeFileSync(sourceFile, 'One two three four');
-  const source = importSourceFile({ projectId, title: 'Source B', filePath: sourceFile });
+  const source = await importSourceFile({ projectId, title: 'Source B', filePath: sourceFile });
 
   db.prepare('INSERT INTO coders (project_id, name) VALUES (?, ?)').run(projectId, 'Coder A');
   db.prepare('INSERT INTO coders (project_id, name) VALUES (?, ?)').run(projectId, 'Coder B');

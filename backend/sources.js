@@ -123,9 +123,13 @@ function getSourceById(sourceId) {
   };
 }
 
-function importSourceFile({ projectId, title, filePath }) {
+async function importSourceFile({ projectId, title, filePath }) {
   const db = getDatabase();
-  const content = fs.readFileSync(filePath, 'utf8');
+  // Route through extractTextFromFile so .docx/.pdf get their real text
+  // extracted instead of having their raw bytes read as UTF-8 (which is
+  // what produced the "PK..." zip-garbage content and the garbled word
+  // cloud built on top of it).
+  const content = await extractTextFromFile(filePath);
   const paragraphs = splitParagraphs(content);
   const paragraphOffsets = JSON.stringify(buildParagraphIndex(content));
 
