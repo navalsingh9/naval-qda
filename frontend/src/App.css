@@ -447,6 +447,36 @@ button:disabled {
   font-size: 0.8rem;
 }
 
+.tree-add-child {
+  flex: 0 0 auto;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.node-ai-suggest {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dfe6f7;
+}
+
+.node-ai-suggest h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.node-ai-suggest .list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem;
+  border: 1px solid #dfe6f7;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;

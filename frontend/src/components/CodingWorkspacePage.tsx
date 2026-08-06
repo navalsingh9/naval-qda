@@ -44,7 +44,7 @@ export function CodingWorkspacePage() {
           </ul>
         </div>
 
-        <NodeTreeSidebar projectId={selectedProjectId ?? 0} selectedNodeId={selectedNodeId} onSelectNode={setSelectedNodeId} />
+        <NodeTreeSidebar projectId={selectedProjectId ?? 0} selectedNodeId={selectedNodeId} onSelectNode={setSelectedNodeId} sourceId={selectedSourceId} />
       </div>
 
       <div className="panel coding-panel">
