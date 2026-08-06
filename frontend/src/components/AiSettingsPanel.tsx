@@ -114,7 +114,7 @@ export function AiSettingsPanel() {
             Provider
             <select value={provider} onChange={(event) => setProvider(event.target.value)}>
               <option value="gemini">Gemini</option>
-              <option value="mistral" disabled>Mistral (coming soon)</option>
+              <option value="mistral">Mistral</option>
             </select>
           </label>
           <label className="field-label">
@@ -124,7 +124,7 @@ export function AiSettingsPanel() {
                 type={showKey ? 'text' : 'password'}
                 value={apiKey}
                 onChange={(event) => setApiKey(event.target.value)}
-                placeholder="Paste your Gemini API key"
+                placeholder={provider === 'mistral' ? 'Paste your Mistral API key' : 'Paste your Gemini API key'}
                 autoComplete="off"
               />
               <button type="button" className="ghost-button" onClick={() => setShowKey((value) => !value)}>

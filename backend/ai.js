@@ -69,6 +69,36 @@ async function callGemini({ apiKey, prompt, responseMimeType }) {
   return text.trim();
 }
 
+async function callMistral({ apiKey, prompt, jsonMode }) {
+  const url = 'https://api.mistral.ai/v1/chat/completions';
+  const body = {
+    model: 'mistral-small-latest',
+    messages: [{ role: 'user', content: prompt }],
+    max_tokens: 1024,
+  };
+  if (jsonMode) {
+    body.response_format = { type: 'json_object' };
+  }
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const errText = await response.text().catch(() => '');
+    throw new Error(`Mistral request failed (${response.status}): ${errText.slice(0, 200)}`);
+  }
+  const data = await response.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text) {
+    throw new Error('Mistral returned no content.');
+  }
+  return text.trim();
+}
+
 // Add a new provider by adding one entry here (and one <option> in
 // AiSettingsPanel.tsx) — everything else (settings storage, fallback,
 // error handling) is shared.
@@ -90,7 +120,23 @@ const PROVIDERS = {
       return parsed.slice(0, maxSuggestions);
     },
   },
-  // mistral: { label: 'Mistral', summarize(...), suggestCodes(...) },
+  mistral: {
+    label: 'Mistral',
+    async summarize({ apiKey, text }) {
+      const prompt = `Summarize the following qualitative research source in 2-3 sentences, focused on what a researcher coding it would want to know:\n\n${text.slice(0, 6000)}`;
+      return callMistral({ apiKey, prompt });
+    },
+    async suggestCodes({ apiKey, text, nodeName, maxSuggestions }) {
+      const prompt = `You are assisting qualitative coding under the parent code "${nodeName}". Suggest up to ${maxSuggestions} child codes for the text below. Respond with ONLY strict JSON: an array of {"name": string, "evidence": string, "confidence": number 0-1}. No prose, no markdown fences.\n\nText:\n${text.slice(0, 6000)}`;
+      const raw = await callMistral({ apiKey, prompt, jsonMode: true });
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+      if (!Array.isArray(parsed)) {
+        throw new Error('Mistral response was not a JSON array.');
+      }
+      return parsed.slice(0, maxSuggestions);
+    },
+  },
 };
 
 // ---- Offline fallback ----
