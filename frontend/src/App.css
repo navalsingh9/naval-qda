@@ -205,6 +205,22 @@ button:disabled {
   margin-top: 0.5rem;
 }
 
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.chip {
+  background: #eef1ff;
+  color: #3049c9;
+  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .list {
   list-style: none;
   padding: 0;

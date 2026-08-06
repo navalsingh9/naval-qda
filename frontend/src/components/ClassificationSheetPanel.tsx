@@ -68,6 +68,8 @@ export function ClassificationSheetPanel() {
       </div>
       {error ? <p className="error-text">{error}</p> : null}
       {projectId ? (
+        <>
+        <p className="description">A case is your unit of analysis — usually one participant or one interview. Create cases and link sources to them from the panel above; each case becomes a row here.</p>
         <div className="sheet-table-wrap">
           <table className="sheet-table">
             <thead>
@@ -98,6 +100,7 @@ export function ClassificationSheetPanel() {
             </tbody>
           </table>
         </div>
+        </>
       ) : (
         <p className="description">Create or select a project to see the classification sheet.</p>
       )}
