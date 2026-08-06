@@ -43,7 +43,7 @@ Project data lives in a local SQLite database under Electron's `userData` direct
 
 ## Contributing
 
-Issues and pull requests are welcome. Please run the backend test suite (`node --test backend`) and frontend lint (`npm --prefix frontend run lint`) before submitting a PR.
+Issues and pull requests are welcome. Please run the backend test suite (`node --test backend`) and frontend lint (`npm --prefix frontend run lint`) before submitting a PR. For submitting bugs, feedback, requests, here is the [Google Form](https://forms.gle/GsarmnrRiu1ZhsKUA)
 
 ## Security
 
