@@ -23,7 +23,7 @@ export const useCaseStore = create<CaseStore>((set) => ({
   loadCases: async (projectId) => {
     set({ loading: true, error: null })
     try {
-      const cases = (await window.api.cases.list(projectId)) as CaseRecord[]
+      const cases = await window.api.cases.list(projectId) as CaseRecord[]
       set({ cases, loading: false })
     } catch (error) {
       set({ error: error instanceof Error ? error.message : String(error), loading: false })
@@ -33,7 +33,7 @@ export const useCaseStore = create<CaseStore>((set) => ({
     if (!name.trim()) return
     set({ loading: true, error: null })
     try {
-      const created = (await window.api.cases.create({ projectId, name })) as { id: number; name: string }
+      const created = await window.api.cases.create({ projectId, name }) as { id: number; name: string }
       set((state) => ({ cases: [...state.cases, { id: created.id, name: created.name, description: null }], loading: false }))
     } catch (error) {
       set({ error: error instanceof Error ? error.message : String(error), loading: false })
@@ -43,7 +43,7 @@ export const useCaseStore = create<CaseStore>((set) => ({
     if (!name.trim()) return
     set({ loading: true, error: null })
     try {
-      const created = (await window.api.cases.createAttribute({ projectId, name, valueType })) as { id: number; name: string; valueType: string }
+      const created = await window.api.cases.createAttribute({ projectId, name, valueType }) as { id: number; name: string; valueType: string }
       set((state) => ({ attributes: [...state.attributes, { id: created.id, name: created.name, valueType: created.valueType }], loading: false }))
     } catch (error) {
       set({ error: error instanceof Error ? error.message : String(error), loading: false })

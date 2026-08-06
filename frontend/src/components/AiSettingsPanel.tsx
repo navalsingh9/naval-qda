@@ -27,6 +27,7 @@ export function AiSettingsPanel() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showKey, setShowKey] = useState(false)
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -118,7 +119,18 @@ export function AiSettingsPanel() {
           </label>
           <label className="field-label">
             API key
-            <input value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="Paste your Gemini API key" />
+            <div className="inline-form" style={{ marginBottom: 0 }}>
+              <input
+                type={showKey ? 'text' : 'password'}
+                value={apiKey}
+                onChange={(event) => setApiKey(event.target.value)}
+                placeholder="Paste your Gemini API key"
+                autoComplete="off"
+              />
+              <button type="button" className="ghost-button" onClick={() => setShowKey((value) => !value)}>
+                {showKey ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </label>
           <p className="description">
             Without a key, AI features fall back to a local offline placeholder so the rest of the app stays usable. Only the specific text you summarize or request suggestions for is ever sent to the provider.

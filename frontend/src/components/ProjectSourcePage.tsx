@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { CasesPanel } from './CasesPanel'
 import { ClassificationSheetPanel } from './ClassificationSheetPanel'
-import { useCaseStore } from '../stores/useCaseStore'
+import { CasesPanel } from './CasesPanel'
 import { useProjectStore } from '../stores/useProjectStore'
 import { useSourceStore } from '../stores/useSourceStore'
+import { useCaseStore } from '../stores/useCaseStore'
 
 export function ProjectSourcePage() {
   const { selectedProjectId, createProject, loadProjects, error: projectError, clearError: clearProjectError } = useProjectStore()
@@ -123,9 +123,7 @@ export function ProjectSourcePage() {
                 >
                   <option value="">Link to case…</option>
                   {cases.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
                 </select>
               </li>

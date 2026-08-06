@@ -10,9 +10,9 @@ export function CasesPanel({ projectId, onChange }: CasesPanelProps) {
   const { cases, createCase, createAttribute, error, clearError } = useCaseStore()
   const [caseName, setCaseName] = useState('')
   const [attributeName, setAttributeName] = useState('')
-  const [valueType, setValueType] = useState('text')
+  const [attributeType, setAttributeType] = useState('text')
 
-  if (!projectId) {
+  if (projectId === null) {
     return (
       <div className="panel">
         <h3>Cases</h3>
@@ -30,7 +30,7 @@ export function CasesPanel({ projectId, onChange }: CasesPanelProps) {
 
   const handleAddAttribute = async () => {
     if (!attributeName.trim()) return
-    await createAttribute(projectId, attributeName, valueType)
+    await createAttribute(projectId, attributeName, attributeType)
     setAttributeName('')
     onChange()
   }
@@ -41,31 +41,39 @@ export function CasesPanel({ projectId, onChange }: CasesPanelProps) {
       {error ? <p className="error-text">{error}</p> : null}
       {error ? <button type="button" className="ghost-button" onClick={() => clearError()}>Dismiss</button> : null}
 
-      <div className="chip-list">
+      <div className="case-chip-list">
         {cases.map((caseItem) => (
-          <span key={caseItem.id} className="chip">{caseItem.name}</span>
+          <span key={caseItem.id} className="case-chip">
+            {caseItem.name}
+          </span>
         ))}
-        {!cases.length ? <span className="description">No cases yet.</span> : null}
+        {!cases.length ? <p className="description">No cases yet.</p> : null}
       </div>
 
-      <div className="inline-form">
-        <input value={caseName} onChange={(event) => setCaseName(event.target.value)} placeholder="Case name" />
-        <button type="button" onClick={() => void handleAddCase()} disabled={!caseName.trim()}>
-          Add case
-        </button>
-      </div>
+      <label className="field-label">
+        Case name
+        <div className="inline-form" style={{ marginBottom: 0 }}>
+          <input value={caseName} onChange={(event) => setCaseName(event.target.value)} placeholder="e.g. P1" />
+          <button type="button" onClick={() => void handleAddCase()} disabled={!caseName.trim()}>
+            Add case
+          </button>
+        </div>
+      </label>
 
-      <div className="inline-form">
-        <input value={attributeName} onChange={(event) => setAttributeName(event.target.value)} placeholder="Attribute name" />
-        <select value={valueType} onChange={(event) => setValueType(event.target.value)}>
-          <option value="text">Text</option>
-          <option value="numeric">Numeric</option>
-          <option value="categorical">Categorical</option>
-        </select>
-        <button type="button" onClick={() => void handleAddAttribute()} disabled={!attributeName.trim()}>
-          Add attribute
-        </button>
-      </div>
+      <label className="field-label">
+        Attribute name
+        <div className="inline-form" style={{ marginBottom: 0 }}>
+          <input value={attributeName} onChange={(event) => setAttributeName(event.target.value)} placeholder="e.g. Rank" />
+          <select value={attributeType} onChange={(event) => setAttributeType(event.target.value)}>
+            <option value="text">Text</option>
+            <option value="numeric">Numeric</option>
+            <option value="categorical">Categorical</option>
+          </select>
+          <button type="button" onClick={() => void handleAddAttribute()} disabled={!attributeName.trim()}>
+            Add attribute
+          </button>
+        </div>
+      </label>
     </div>
   )
 }
