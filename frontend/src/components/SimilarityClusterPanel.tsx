@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { useProjectStore } from '../stores/useProjectStore'
 import { useSourceStore } from '../stores/useSourceStore'
 import { useNodeStore, type NodeTreeItem } from '../stores/useNodeStore'
+import { Dendrogram, type DendroNode } from './charts/Charts'
 
 type ClusterResult = {
   clusters: Array<{ id: number; children: unknown[] }>
   linkage: number[][]
+  tree: DendroNode | null
 }
 
 function flattenNodeNames(nodes: NodeTreeItem[]): Map<number, string> {
@@ -74,6 +76,16 @@ export function SimilarityClusterPanel() {
     return Math.max(...result.linkage.flat())
   }, [result])
 
+  // The backend labels dendrogram leaves by array position (see
+  // hierarchicalCluster) since it has no idea what a "source title" is —
+  // swap in the real titles here for display.
+  const displayTree = useMemo((): DendroNode | null => {
+    if (!result?.tree) return null
+    const relabel = (node: DendroNode): DendroNode =>
+      node.type === 'leaf' ? { ...node, label: labels[node.id] ?? node.label } : { ...node, left: relabel(node.left), right: relabel(node.right) }
+    return relabel(result.tree)
+  }, [result, labels])
+
   return (
     <div className="panel">
       <div className="page-header">
@@ -97,6 +109,11 @@ export function SimilarityClusterPanel() {
 
       {result?.linkage?.length ? (
         <div className="sheet-table-wrap">
+          {displayTree ? (
+            <div className="chart-card" style={{ marginBottom: '0.75rem' }}>
+              <Dendrogram tree={displayTree} />
+            </div>
+          ) : null}
           <table className="sheet-table">
             <thead>
               <tr>

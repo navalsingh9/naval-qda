@@ -10,13 +10,15 @@ const {
   createCase,
   listCases,
   createAttribute,
+  listAttributes,
   setCaseAttributeValue,
   linkSourceToCase,
   getClassificationSheet,
 } = require('../backend/memos');
-const { createCoder, listCoders } = require('../backend/coders');
+const { createCoder, listCoders, getOrCreatePrimaryCoder } = require('../backend/coders');
+const { getFrameworkMatrix, setFrameworkSummary } = require('../backend/framework');
 const { textSearch, wordFrequency, codingQuery, matrixCodingQuery, codingComparison, interpretKappa } = require('../backend/query');
-const { wordCloudData, hierarchyChartData, buildFeatureVectors, clusterByWordSimilarity, clusterByCodingSimilarity } = require('../backend/visualize');
+const { wordCloudData, hierarchyChartData, codingByNodeChart, codingByAttributeChart, buildFeatureVectors, clusterByWordSimilarity, clusterByCodingSimilarity } = require('../backend/visualize');
 const { importMedia, createTranscriptionJob, updateTranscriptSegment } = require('../backend/transcribe');
 const { generateCodingReport, generateProjectSummary } = require('../backend/report');
 const { summarizeSource, suggestChildCodes, setSetting, getSetting } = require('../backend/ai');
@@ -83,7 +85,12 @@ ipcMain.handle('projects:create', (_event, name) => {
   const db = getDatabase();
   const insert = db.prepare('INSERT INTO projects (name) VALUES (?)');
   const result = insert.run(name);
-  return { id: result.lastInsertRowid, name };
+  const projectId = result.lastInsertRowid;
+  // Every project needs a coder before anything can be coded — provision
+  // the default one now so coding never fails with "Coder not found" on a
+  // freshly created project.
+  getOrCreatePrimaryCoder(projectId);
+  return { id: projectId, name };
 });
 
 ipcMain.handle('projects:list', () => {
@@ -129,12 +136,17 @@ ipcMain.handle('memos:list', (_event, linkedType, linkedId) => listMemos(linkedT
 ipcMain.handle('cases:create', (_event, payload) => createCase(payload));
 ipcMain.handle('cases:list', (_event, projectId) => listCases(projectId));
 ipcMain.handle('attributes:create', (_event, payload) => createAttribute(payload));
+ipcMain.handle('attributes:list', (_event, projectId) => listAttributes(projectId));
 ipcMain.handle('cases:setAttributeValue', (_event, payload) => setCaseAttributeValue(payload));
 ipcMain.handle('cases:linkSource', (_event, sourceId, caseId) => linkSourceToCase(sourceId, caseId));
 ipcMain.handle('cases:getClassificationSheet', (_event, projectId) => getClassificationSheet(projectId));
 
 ipcMain.handle('coders:create', (_event, payload) => createCoder(payload));
 ipcMain.handle('coders:list', (_event, projectId) => listCoders(projectId));
+ipcMain.handle('coders:getOrCreatePrimary', (_event, projectId) => getOrCreatePrimaryCoder(projectId));
+
+ipcMain.handle('framework:getMatrix', (_event, payload) => getFrameworkMatrix(payload));
+ipcMain.handle('framework:setSummary', (_event, payload) => setFrameworkSummary(payload));
 
 ipcMain.handle('query:textSearch', (_event, payload) => textSearch(payload));
 ipcMain.handle('query:wordFrequency', (_event, payload) => wordFrequency(payload));
@@ -145,6 +157,8 @@ ipcMain.handle('query:interpretKappa', (_event, k) => interpretKappa(k));
 
 ipcMain.handle('visualize:wordCloudData', (_event, payload) => wordCloudData(payload));
 ipcMain.handle('visualize:hierarchyChartData', (_event, payload) => hierarchyChartData(payload));
+ipcMain.handle('visualize:codingByNodeChart', (_event, payload) => codingByNodeChart(payload));
+ipcMain.handle('visualize:codingByAttributeChart', (_event, payload) => codingByAttributeChart(payload));
 ipcMain.handle('visualize:buildFeatureVectors', (_event, payload) => buildFeatureVectors(payload));
 ipcMain.handle('visualize:clusterByWordSimilarity', (_event, payload) => clusterByWordSimilarity(payload));
 ipcMain.handle('visualize:clusterByCodingSimilarity', (_event, payload) => clusterByCodingSimilarity(payload));

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { ClassificationSheetPanel } from './ClassificationSheetPanel'
 import { CasesPanel } from './CasesPanel'
+import { FrameworkMatrixPanel } from './FrameworkMatrixPanel'
 import { useProjectStore } from '../stores/useProjectStore'
 import { useSourceStore } from '../stores/useSourceStore'
 import { useCaseStore } from '../stores/useCaseStore'
+
+type Tab = 'sources' | 'cases' | 'framework'
 
 export function ProjectSourcePage() {
   const { selectedProjectId, createProject, loadProjects, error: projectError, clearError: clearProjectError } = useProjectStore()
@@ -12,6 +15,7 @@ export function ProjectSourcePage() {
   const [projectName, setProjectName] = useState('')
   const [isDraggingOver, setIsDraggingOver] = useState(false)
   const [refreshToken, setRefreshToken] = useState(0)
+  const [activeTab, setActiveTab] = useState<Tab>('sources')
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
@@ -80,40 +84,50 @@ export function ProjectSourcePage() {
 
       <input ref={fileInputRef} type="file" accept=".txt,.docx,.pdf" multiple hidden onChange={handleFileSelected} />
 
-      <div className="panel-grid">
-        <div className="panel">
-          <h3>Create project</h3>
-          <div className="inline-form">
-            <input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="New project name" />
-            <button type="button" onClick={handleCreateProject} disabled={!projectName.trim()}>
-              Create
-            </button>
-          </div>
-          {projectError ? <p className="error-text">{projectError}</p> : null}
-          {projectError ? <button type="button" className="ghost-button" onClick={() => clearProjectError()}>Dismiss</button> : null}
+      <div className="panel">
+        <h3>Create project</h3>
+        <div className="inline-form">
+          <input value={projectName} onChange={(event) => setProjectName(event.target.value)} placeholder="New project name" />
+          <button type="button" onClick={handleCreateProject} disabled={!projectName.trim()}>
+            Create
+          </button>
         </div>
+        {projectError ? <p className="error-text">{projectError}</p> : null}
+        {projectError ? <button type="button" className="ghost-button" onClick={() => clearProjectError()}>Dismiss</button> : null}
       </div>
 
-      <div className="panel-grid">
-        <CasesPanel projectId={selectedProjectId} onChange={() => setRefreshToken((t) => t + 1)} />
+      <div className="subtab-bar" role="tablist">
+        <button type="button" role="tab" aria-selected={activeTab === 'sources'} className={`subtab${activeTab === 'sources' ? ' active' : ''}`} onClick={() => setActiveTab('sources')}>
+          Imported sources
+          <span className="badge">{sources.length}</span>
+        </button>
+        <button type="button" role="tab" aria-selected={activeTab === 'cases'} className={`subtab${activeTab === 'cases' ? ' active' : ''}`} onClick={() => setActiveTab('cases')}>
+          Cases &amp; classification sheet
+          <span className="badge">{cases.length}</span>
+        </button>
+        <button type="button" role="tab" aria-selected={activeTab === 'framework'} className={`subtab${activeTab === 'framework' ? ' active' : ''}`} onClick={() => setActiveTab('framework')}>
+          Framework matrix
+        </button>
       </div>
 
-      <div className="panel-grid">
+      {activeTab === 'sources' ? (
         <div
           className={`panel drop-zone${isDraggingOver ? ' drop-zone-active' : ''}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={(event) => void handleDrop(event)}
         >
-          <h3>Imported sources</h3>
           {sourceError ? <p className="error-text">{sourceError}</p> : null}
           {sourceError ? <button type="button" className="ghost-button" onClick={() => clearSourceError()}>Dismiss</button> : null}
-          <ul className="list">
+          <ul className="list source-list">
             {sources.map((source) => (
-              <li key={source.id}>
-                <strong>{source.title}</strong>
-                <span className="source-path" title={source.file_path}>{source.file_path.split(/[\\/]/).pop()}</span>
+              <li key={source.id} className="source-list-row">
+                <div className="source-list-info">
+                  <strong>{source.title}</strong>
+                  <span className="source-path" title={source.file_path}>{source.file_path.split(/[\\/]/).pop()}</span>
+                </div>
                 <select
+                  className="source-list-link"
                   value=""
                   onChange={(event) => {
                     const caseId = Number(event.target.value)
@@ -137,11 +151,16 @@ export function ProjectSourcePage() {
             ) : null}
           </ul>
         </div>
-      </div>
-
-      <div className="panel-grid sheet-grid">
-        <ClassificationSheetPanel key={refreshToken} />
-      </div>
+      ) : activeTab === 'cases' ? (
+        <div className="panel">
+          <div className="panel-grid">
+            <CasesPanel projectId={selectedProjectId} onChange={() => setRefreshToken((t) => t + 1)} />
+          </div>
+          <ClassificationSheetPanel key={refreshToken} />
+        </div>
+      ) : (
+        <FrameworkMatrixPanel />
+      )}
     </section>
   )
 }

@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld('api', {
     create: (payload) => ipcRenderer.invoke('cases:create', payload),
     list: (projectId) => ipcRenderer.invoke('cases:list', projectId),
     createAttribute: (payload) => ipcRenderer.invoke('attributes:create', payload),
+    listAttributes: (projectId) => ipcRenderer.invoke('attributes:list', projectId),
     setAttributeValue: (payload) => ipcRenderer.invoke('cases:setAttributeValue', payload),
     linkSource: (sourceId, caseId) => ipcRenderer.invoke('cases:linkSource', sourceId, caseId),
     getClassificationSheet: (projectId) => ipcRenderer.invoke('cases:getClassificationSheet', projectId),
@@ -43,6 +44,11 @@ contextBridge.exposeInMainWorld('api', {
   coders: {
     create: (payload) => ipcRenderer.invoke('coders:create', payload),
     list: (projectId) => ipcRenderer.invoke('coders:list', projectId),
+    getOrCreatePrimary: (projectId) => ipcRenderer.invoke('coders:getOrCreatePrimary', projectId),
+  },
+  framework: {
+    getMatrix: (payload) => ipcRenderer.invoke('framework:getMatrix', payload),
+    setSummary: (payload) => ipcRenderer.invoke('framework:setSummary', payload),
   },
   query: {
     textSearch: (payload) => ipcRenderer.invoke('query:textSearch', payload),
@@ -55,6 +61,8 @@ contextBridge.exposeInMainWorld('api', {
   visualize: {
     wordCloudData: (payload) => ipcRenderer.invoke('visualize:wordCloudData', payload),
     hierarchyChartData: (payload) => ipcRenderer.invoke('visualize:hierarchyChartData', payload),
+    codingByNodeChart: (payload) => ipcRenderer.invoke('visualize:codingByNodeChart', payload),
+    codingByAttributeChart: (payload) => ipcRenderer.invoke('visualize:codingByAttributeChart', payload),
     buildFeatureVectors: (payload) => ipcRenderer.invoke('visualize:buildFeatureVectors', payload),
     clusterByWordSimilarity: (payload) => ipcRenderer.invoke('visualize:clusterByWordSimilarity', payload),
     clusterByCodingSimilarity: (payload) => ipcRenderer.invoke('visualize:clusterByCodingSimilarity', payload),

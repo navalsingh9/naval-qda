@@ -41,7 +41,15 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null)
+  // Where to anchor the floating "pick a node" toolbar, in coordinates
+  // relative to the scrollable content frame (so it stays put on scroll).
+  const [toolbarPos, setToolbarPos] = useState<{ top: number; left: number } | null>(null)
+  const [nodeFilter, setNodeFilter] = useState('')
+  const [coderId, setCoderId] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const frameRef = useRef<HTMLDivElement | null>(null)
+  const toolbarRef = useRef<HTMLDivElement | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (!selectedProjectId) return
@@ -78,6 +86,17 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
     void loadSource()
   }, [selectedProjectId, sourceId])
 
+  // A project must have a coder before any coding can be saved. Resolve
+  // (and, on a brand-new project, silently provision) the project's
+  // default coder once here instead of guessing at an id in applySelection.
+  useEffect(() => {
+    if (!selectedProjectId) return
+    setCoderId(null)
+    window.api.coders.getOrCreatePrimary(selectedProjectId)
+      .then((coder) => setCoderId(coder.id))
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)))
+  }, [selectedProjectId])
+
   useEffect(() => {
     if (!source?.content) return
 
@@ -110,13 +129,23 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
     return segments
   }, [codings, source?.content])
 
+  const closeToolbar = () => {
+    setSelectionRange(null)
+    setToolbarPos(null)
+    setNodeFilter('')
+  }
+
   const handleMouseUp = () => {
     const selection = window.getSelection()
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      closeToolbar()
+      return
+    }
 
     const range = selection.getRangeAt(0)
     const container = containerRef.current
-    if (!container || !source?.content) return
+    const frame = frameRef.current
+    if (!container || !frame || !source?.content) return
 
     const contentNode = container.querySelector('[data-content="true"]') as HTMLElement | null
     if (!contentNode || !contentNode.contains(range.commonAncestorContainer)) return
@@ -141,22 +170,37 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
 
     const selectionStart = Math.max(0, Math.min(source.content.length, baseOffset + Math.min(rawStart, rawEnd)))
     const selectionEnd = Math.max(0, Math.min(source.content.length, baseOffset + Math.max(rawStart, rawEnd)))
-    if (selectionEnd <= selectionStart) return
+    if (selectionEnd <= selectionStart) {
+      closeToolbar()
+      return
+    }
+
+    // Anchor the toolbar just above the selection — right where the user is
+    // already looking — instead of making them scroll down to a panel
+    // fixed at the bottom of the page.
+    const selectionRect = range.getBoundingClientRect()
+    const frameRect = frame.getBoundingClientRect()
+    const top = selectionRect.top - frameRect.top + frame.scrollTop
+    const left = selectionRect.left - frameRect.left + selectionRect.width / 2
 
     setSelectionRange({ start: selectionStart, end: selectionEnd })
+    setToolbarPos({ top, left })
+    setNodeFilter('')
+    requestAnimationFrame(() => searchInputRef.current?.focus())
   }
 
   const applySelection = async (nodeId: number) => {
-    if (!source || !selectionRange) return
+    if (!source || !selectionRange || coderId == null) return
     try {
       await window.api.coding.apply({
         sourceId,
         nodeId,
-        coderId: 1,
+        coderId,
         startOffset: selectionRange.start,
         endOffset: selectionRange.end,
       })
-      setSelectionRange(null)
+      closeToolbar()
+      window.getSelection()?.removeAllRanges()
       onSelectionCoded?.(nodeId)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -168,6 +212,35 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
     return visit(tree)
   }, [tree])
 
+  const filteredNodes = useMemo(() => {
+    const query = nodeFilter.trim().toLowerCase()
+    if (!query) return flattenedNodes
+    return flattenedNodes.filter((node) => node.name.toLowerCase().includes(query))
+  }, [flattenedNodes, nodeFilter])
+
+  // Dismiss the toolbar on an outside click or Escape, rather than only
+  // ever closing it after a successful code (which left it stranded open
+  // if the user changed their mind).
+  useEffect(() => {
+    if (!selectionRange) return
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (toolbarRef.current && !toolbarRef.current.contains(event.target as Node)) {
+        closeToolbar()
+      }
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeToolbar()
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [selectionRange])
+
   return (
     <div className="source-viewer">
       {loading ? <p className="description">Loading source…</p> : null}
@@ -176,7 +249,7 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
         <>
           <div className="source-header">
             <h3>{source.title}</h3>
-            <span className="description">Select text to code it.</span>
+            <span className="description">Select text, then pick a node from the popup to code it.</span>
           </div>
           <div className="source-content-wrap">
             <MediaPlayer
@@ -189,42 +262,63 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
                 endTime: segment[1],
               }))}
             />
-            <div ref={containerRef} className="source-content" onMouseUp={handleMouseUp}>
-              <div data-content="true" data-start-offset="0" data-end-offset={source.content.length}>
-                {spans.map((segment) => {
-                  const isHighlighted = highlightActive && highlightOffset != null && highlightOffset >= segment.start && highlightOffset < segment.end
-                  const background = segment.coveringNodes.length === 0
-                    ? 'transparent'
-                    : segment.coveringNodes.length === 1
-                      ? `${getNodeColor(segment.coveringNodes[0].node_id)}22`
-                      : 'repeating-linear-gradient(135deg, transparent 0 4px, #dbeafe 4px 8px)'
+            <div ref={frameRef} className="source-content-frame">
+              <div ref={containerRef} className="source-content" onMouseUp={handleMouseUp}>
+                <div data-content="true" data-start-offset="0" data-end-offset={source.content.length}>
+                  {spans.map((segment) => {
+                    const isHighlighted = highlightActive && highlightOffset != null && highlightOffset >= segment.start && highlightOffset < segment.end
+                    const background = segment.coveringNodes.length === 0
+                      ? 'transparent'
+                      : segment.coveringNodes.length === 1
+                        ? `${getNodeColor(segment.coveringNodes[0].node_id)}33`
+                        : 'repeating-linear-gradient(135deg, transparent 0 4px, #dbeafe 4px 8px)'
 
-                  return (
-                    <span
-                      key={`${segment.start}-${segment.end}`}
-                      className={`source-span${isHighlighted ? ' highlight' : ''}`}
-                      style={{ background }}
-                    >
-                      {source.content.slice(segment.start, segment.end)}
-                    </span>
-                  )
-                })}
+                    return (
+                      <span
+                        key={`${segment.start}-${segment.end}`}
+                        className={`source-span${isHighlighted ? ' highlight' : ''}`}
+                        style={{ background }}
+                        title={segment.coveringNodes.length ? segment.coveringNodes.map((c) => flattenedNodes.find((n) => n.id === c.node_id)?.name ?? '').filter(Boolean).join(', ') : undefined}
+                      >
+                        {source.content.slice(segment.start, segment.end)}
+                      </span>
+                    )
+                  })}
+                </div>
               </div>
+
+              {selectionRange && toolbarPos ? (
+                <div
+                  ref={toolbarRef}
+                  className="code-popover"
+                  style={{ top: toolbarPos.top, left: toolbarPos.left }}
+                >
+                  <input
+                    ref={searchInputRef}
+                    className="node-picker-search"
+                    placeholder={flattenedNodes.length ? 'Search nodes…' : 'No nodes yet — add one first'}
+                    value={nodeFilter}
+                    onChange={(event) => setNodeFilter(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' && filteredNodes.length === 1) void applySelection(filteredNodes[0].id)
+                    }}
+                    disabled={!flattenedNodes.length}
+                  />
+                  <div className="node-picker-list">
+                    {filteredNodes.map((node) => (
+                      <button key={node.id} type="button" className="node-chip" onClick={() => void applySelection(node.id)}>
+                        <span className="node-chip-swatch" style={{ background: getNodeColor(node.id) }} />
+                        {node.name}
+                      </button>
+                    ))}
+                    {flattenedNodes.length > 0 && filteredNodes.length === 0 ? (
+                      <p className="description node-picker-empty">No nodes match "{nodeFilter}".</p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
-          {selectionRange ? (
-            <div className="code-popover">
-              <h4>Code selection</h4>
-              <div className="node-picker-list">
-                {flattenedNodes.map((node: (typeof flattenedNodes)[number]) => (
-                  <button key={node.id} type="button" className="node-chip" onClick={() => void applySelection(node.id)}>
-                    {node.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
-          <p className="description">Select text and choose a node from the popover above to code it.</p>
         </>
       ) : (
         <p className="description">Select a source to begin coding.</p>

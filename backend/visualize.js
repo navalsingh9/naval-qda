@@ -24,6 +24,90 @@ function hierarchyChartData({ projectId }) {
   return nodes.map((node) => toTree(node));
 }
 
+// Coding-by-node summary (NVivo calls this a "Chart" off the node list):
+// how many coding references each node has, and how many distinct
+// sources contributed at least one of them. Powers the bar/pie charts
+// on the Visualizations page.
+function codingByNodeChart({ projectId }) {
+  const db = getDatabase();
+  const project = db.prepare('SELECT id FROM projects WHERE id = ?').get(projectId);
+  if (!project) {
+    throw new Error('Project not found.');
+  }
+
+  const nodes = db.prepare('SELECT id, name, parent_id FROM nodes WHERE project_id = ? ORDER BY id ASC').all(projectId);
+  const nameById = new Map(nodes.map((n) => [n.id, n.name]));
+
+  const pathName = (node) => {
+    const parts = [node.name];
+    let parentId = node.parent_id;
+    while (parentId != null) {
+      const parent = nodes.find((n) => n.id === parentId);
+      if (!parent) break;
+      parts.unshift(parent.name);
+      parentId = parent.parent_id;
+    }
+    return parts.join(' \u203a ');
+  };
+
+  return nodes.map((node) => {
+    const stats = db.prepare(`
+      SELECT COUNT(*) AS references_count, COUNT(DISTINCT source_id) AS sources_count
+      FROM codings WHERE node_id = ?
+    `).get(node.id);
+    return {
+      nodeId: node.id,
+      name: nameById.get(node.id) ?? node.name,
+      path: pathName(node),
+      references: stats.references_count,
+      sources: stats.sources_count,
+    };
+  });
+}
+
+// Crosstab of coding references: nodes (rows) x the distinct values of a
+// chosen case attribute (columns) — e.g. "Manager flexibility" coding
+// broken down by the "Role" attribute. This is NVivo's Matrix Coding
+// Query when one axis is set to a classification attribute rather than
+// individual cases.
+function codingByAttributeChart({ projectId, attributeId }) {
+  const db = getDatabase();
+  const project = db.prepare('SELECT id FROM projects WHERE id = ?').get(projectId);
+  if (!project) {
+    throw new Error('Project not found.');
+  }
+
+  const attribute = db.prepare('SELECT id, name FROM attributes WHERE id = ? AND project_id = ?').get(attributeId, projectId);
+  if (!attribute) {
+    throw new Error('Attribute not found.');
+  }
+
+  const nodes = db.prepare('SELECT id, name FROM nodes WHERE project_id = ? ORDER BY id ASC').all(projectId);
+  const values = db.prepare(`
+    SELECT DISTINCT value FROM case_attribute_values
+    WHERE attribute_id = ? AND value IS NOT NULL AND value != ''
+    ORDER BY value ASC
+  `).all(attributeId).map((row) => row.value);
+
+  const cells = nodes.map((node) => values.map((value) => {
+    const count = db.prepare(`
+      SELECT COUNT(*) AS count
+      FROM codings c
+      JOIN source_case_links scl ON scl.source_id = c.source_id
+      JOIN case_attribute_values cav ON cav.case_id = scl.case_id
+      WHERE c.project_id = ? AND c.node_id = ? AND cav.attribute_id = ? AND cav.value = ?
+    `).get(projectId, node.id, attributeId, value).count;
+    return count;
+  }));
+
+  return {
+    attributeName: attribute.name,
+    rowLabels: nodes.map((n) => n.name),
+    columnLabels: values,
+    cells,
+  };
+}
+
 function buildFeatureVectors({ items, mode = 'tf' }) {
   if (!Array.isArray(items) || items.length === 0) {
     return [];
@@ -62,12 +146,7 @@ function buildFeatureVectors({ items, mode = 'tf' }) {
   return vectors;
 }
 
-function clusterByWordSimilarity({ items, mode = 'tf' }) {
-  const vectors = buildFeatureVectors({ items, mode });
-  if (vectors.length <= 1) {
-    return { clusters: vectors.map((item) => ({ id: item.id, children: [] })), linkage: [] };
-  }
-
+function buildDistanceMatrix(vectors) {
   const distanceMatrix = [];
   for (let i = 0; i < vectors.length; i += 1) {
     distanceMatrix[i] = [];
@@ -84,46 +163,94 @@ function clusterByWordSimilarity({ items, mode = 'tf' }) {
       }
     }
   }
+  return distanceMatrix;
+}
+
+// Average-linkage agglomerative hierarchical clustering. Repeatedly
+// merges the two closest remaining clusters (average distance between
+// all member pairs) until a single tree remains, recording each merge's
+// height (distance) so the frontend can draw a real dendrogram instead
+// of just a flat similarity matrix.
+function hierarchicalCluster(distanceMatrix, labels) {
+  const n = distanceMatrix.length;
+  if (n === 0) return null;
+  if (n === 1) return { type: 'leaf', id: 0, label: labels[0] };
+
+  let clusters = labels.map((label, index) => ({
+    node: { type: 'leaf', id: index, label },
+    members: [index],
+  }));
+
+  while (clusters.length > 1) {
+    let best = { i: 0, j: 1, distance: Infinity };
+    for (let i = 0; i < clusters.length; i += 1) {
+      for (let j = i + 1; j < clusters.length; j += 1) {
+        let total = 0;
+        let count = 0;
+        for (const a of clusters[i].members) {
+          for (const b of clusters[j].members) {
+            total += distanceMatrix[a][b];
+            count += 1;
+          }
+        }
+        const avg = count > 0 ? total / count : 0;
+        if (avg < best.distance) {
+          best = { i, j, distance: avg };
+        }
+      }
+    }
+
+    const merged = {
+      node: { type: 'node', height: best.distance, left: clusters[best.i].node, right: clusters[best.j].node },
+      members: [...clusters[best.i].members, ...clusters[best.j].members],
+    };
+
+    clusters = clusters.filter((_, index) => index !== best.i && index !== best.j);
+    clusters.push(merged);
+  }
+
+  return clusters[0].node;
+}
+
+function clusterByWordSimilarity({ items, mode = 'tf' }) {
+  const vectors = buildFeatureVectors({ items, mode });
+  if (vectors.length <= 1) {
+    return { clusters: vectors.map((item) => ({ id: item.id, children: [] })), linkage: [], tree: vectors.length === 1 ? { type: 'leaf', id: 0, label: String(vectors[0].id) } : null };
+  }
+
+  const distanceMatrix = buildDistanceMatrix(vectors);
+  const tree = hierarchicalCluster(distanceMatrix, vectors.map((v) => String(v.id)));
 
   return {
     clusters: vectors.map((item) => ({ id: item.id, children: [] })),
     linkage: distanceMatrix,
+    tree,
   };
 }
 
 function clusterByCodingSimilarity({ items, mode = 'presence' }) {
   const vectors = buildFeatureVectors({ items, mode });
   if (vectors.length <= 1) {
-    return { clusters: vectors.map((item) => ({ id: item.id, children: [] })), linkage: [] };
+    return { clusters: vectors.map((item) => ({ id: item.id, children: [] })), linkage: [], tree: vectors.length === 1 ? { type: 'leaf', id: 0, label: String(vectors[0].id) } : null };
   }
 
-  const distanceMatrix = [];
-  for (let i = 0; i < vectors.length; i += 1) {
-    distanceMatrix[i] = [];
-    for (let j = 0; j < vectors.length; j += 1) {
-      if (i === j) {
-        distanceMatrix[i][j] = 0;
-      } else {
-        const a = vectors[i].vector;
-        const b = vectors[j].vector;
-        const union = new Set([...a, ...b]);
-        const intersection = a.filter((value, index) => value > 0 && b[index] > 0).length;
-        const unionSize = union.size;
-        distanceMatrix[i][j] = unionSize === 0 ? 0 : 1 - intersection / unionSize;
-      }
-    }
-  }
+  const distanceMatrix = buildDistanceMatrix(vectors);
+  const tree = hierarchicalCluster(distanceMatrix, vectors.map((v) => String(v.id)));
 
   return {
     clusters: vectors.map((item) => ({ id: item.id, children: [] })),
     linkage: distanceMatrix,
+    tree,
   };
 }
 
 module.exports = {
   wordCloudData,
   hierarchyChartData,
+  codingByNodeChart,
+  codingByAttributeChart,
   buildFeatureVectors,
+  hierarchicalCluster,
   clusterByWordSimilarity,
   clusterByCodingSimilarity,
 };

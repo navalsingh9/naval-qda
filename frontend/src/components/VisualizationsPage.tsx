@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { WordCloud } from './WordCloud'
 import { HierarchyTreemap } from './HierarchyTreemap'
+import { CodingChartsPanel } from './CodingChartsPanel'
 import { SimilarityClusterPanel } from './SimilarityClusterPanel'
 import { useProjectStore } from '../stores/useProjectStore'
 import { useNodeStore } from '../stores/useNodeStore'
@@ -23,12 +24,16 @@ export function VisualizationsPage() {
       <div className="page-header">
         <div>
           <p className="eyebrow">Visualizations</p>
-          <h2>Word cloud, hierarchy, and similarity views</h2>
+          <h2>Charts, word cloud, hierarchy, and similarity views</h2>
         </div>
       </div>
 
       <div className="panel-grid query-grid">
+        <CodingChartsPanel />
         <WordCloud />
+      </div>
+
+      <div className="panel-grid query-grid">
         <HierarchyTreemap />
       </div>
 

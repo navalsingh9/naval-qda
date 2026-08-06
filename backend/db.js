@@ -155,6 +155,22 @@ function applyMigrations(database) {
       name: '003_ai_settings_schema',
       sql: null,
     },
+    {
+      name: '004_framework_matrix_schema',
+      sql: `
+        CREATE TABLE IF NOT EXISTS framework_summaries (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          case_id INTEGER NOT NULL,
+          node_id INTEGER NOT NULL,
+          summary TEXT NOT NULL DEFAULT '',
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY(case_id) REFERENCES cases(id) ON DELETE CASCADE,
+          FOREIGN KEY(node_id) REFERENCES nodes(id) ON DELETE CASCADE,
+          UNIQUE(case_id, node_id)
+        );
+      `,
+    },
   ];
 
   for (const migration of migrations) {

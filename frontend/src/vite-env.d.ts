@@ -30,6 +30,7 @@ declare global {
         create: (payload: unknown) => Promise<unknown>
         list: (projectId: number) => Promise<unknown>
         createAttribute: (payload: unknown) => Promise<unknown>
+        listAttributes: (projectId: number) => Promise<Array<{ id: number; projectId: number; name: string; valueType: string }>>
         setAttributeValue: (payload: unknown) => Promise<unknown>
         linkSource: (sourceId: number, caseId: number) => Promise<unknown>
         getClassificationSheet: (projectId: number) => Promise<unknown>
@@ -37,6 +38,25 @@ declare global {
       coders: {
         create: (payload: { projectId: number; name: string }) => Promise<{ id: number; projectId: number; name: string }>
         list: (projectId: number) => Promise<Array<{ id: number; projectId: number; name: string; createdAt: string }>>
+        getOrCreatePrimary: (projectId: number) => Promise<{ id: number; projectId: number; name: string; createdAt: string }>
+      }
+      framework: {
+        getMatrix: (payload: { projectId: number; nodeIds?: number[] | null; caseIds?: number[] | null }) => Promise<{
+          rowLabels: Array<{ id: number; name: string }>
+          columnLabels: Array<{ id: number; name: string }>
+          rows: Array<{
+            caseId: number
+            caseName: string
+            columns: Array<{
+              nodeId: number
+              excerptCount: number
+              excerpts: Array<{ codingId: number; sourceId: number; sourceTitle: string; text: string }>
+              summary: string
+              summaryUpdatedAt: string | null
+            }>
+          }>
+        }>
+        setSummary: (payload: { caseId: number; nodeId: number; summary: string }) => Promise<{ caseId: number; nodeId: number; summary: string; updatedAt: string | null }>
       }
       query: {
         textSearch: (payload: unknown) => Promise<unknown>
@@ -49,6 +69,8 @@ declare global {
       visualize: {
         wordCloudData: (payload: unknown) => Promise<unknown>
         hierarchyChartData: (payload: unknown) => Promise<unknown>
+        codingByNodeChart: (payload: unknown) => Promise<unknown>
+        codingByAttributeChart: (payload: unknown) => Promise<unknown>
         buildFeatureVectors: (payload: unknown) => Promise<unknown>
         clusterByWordSimilarity: (payload: unknown) => Promise<unknown>
         clusterByCodingSimilarity: (payload: unknown) => Promise<unknown>

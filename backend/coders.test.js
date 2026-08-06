@@ -5,7 +5,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { initializeDatabase, closeDatabase } = require('./db');
-const { createCoder, listCoders } = require('./coders');
+const { createCoder, listCoders, getOrCreatePrimaryCoder } = require('./coders');
 
 function makeTempApp() {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'naval-qda-coders-'));
@@ -39,6 +39,35 @@ test('createCoder and listCoders work end to end', () => {
 
   assert.throws(() => createCoder({ projectId, name: '   ' }), /Coder name is required/);
   assert.throws(() => createCoder({ projectId: 999999, name: 'Ghost' }), /Project not found/);
+
+  closeDatabase();
+});
+
+test('getOrCreatePrimaryCoder provisions a default coder once, then reuses it', () => {
+  const { app } = makeTempApp();
+  initializeDatabase(app);
+
+  const db = require('./db').getDatabase();
+  db.prepare('INSERT INTO projects (name) VALUES (?)').run('Project');
+  const projectId = db.prepare('SELECT last_insert_rowid() AS id').get().id;
+
+  const first = getOrCreatePrimaryCoder(projectId);
+  assert.equal(first.name, 'Primary Coder');
+  assert.equal(listCoders(projectId).length, 1);
+
+  const second = getOrCreatePrimaryCoder(projectId);
+  assert.equal(second.id, first.id);
+  assert.equal(listCoders(projectId).length, 1);
+
+  // A project that already has a coder (e.g. one added explicitly) should
+  // get that one back rather than a redundant second default.
+  const other = createCoder({ projectId, name: 'Reviewer' });
+  db.prepare('INSERT INTO projects (name) VALUES (?)').run('Project 2');
+  const projectId2 = db.prepare('SELECT last_insert_rowid() AS id').get().id;
+  createCoder({ projectId: projectId2, name: 'Existing Coder' });
+  const existing = getOrCreatePrimaryCoder(projectId2);
+  assert.equal(existing.name, 'Existing Coder');
+  assert.notEqual(other.id, existing.id);
 
   closeDatabase();
 });

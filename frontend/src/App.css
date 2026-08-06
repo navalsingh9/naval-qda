@@ -275,6 +275,78 @@ button:disabled {
   margin-top: 1rem;
 }
 
+/* --- Sub-tabs (used to split "Sources" from "Cases & classification
+   sheet" so the page never becomes one long undifferentiated scroll). --- */
+.subtab-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0 1rem;
+  border-bottom: 1px solid #e5ebf8;
+}
+
+.subtab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: #526080;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 0.6rem 0.2rem;
+  margin-bottom: -1px;
+  font-weight: 600;
+}
+
+.subtab.active {
+  color: #3730a3;
+  border-bottom-color: #4c6ef5;
+}
+
+.subtab .badge {
+  background: #eef2ff;
+}
+
+.subtab.active .badge {
+  background: #dbe4ff;
+}
+
+/* --- Imported sources list: fixed two-column row instead of a
+   free-flowing column with a wide, oddly-placed <select>. --- */
+.source-list {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.source-list-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.source-list-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.source-list-info span {
+  color: #6b7280;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-list-link {
+  flex: 0 0 auto;
+  width: 180px;
+}
+
 .sheet-table-wrap {
   overflow-x: auto;
 }
@@ -301,6 +373,87 @@ button:disabled {
   min-width: 120px;
 }
 
+/* --- Framework matrix --- */
+.framework-table td {
+  vertical-align: top;
+  min-width: 180px;
+}
+
+.framework-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: #111827;
+  padding: 0.4rem;
+  border-radius: 8px;
+}
+
+.framework-cell:hover {
+  background: #eef2ff;
+}
+
+.framework-cell-filled {
+  background: #f0fdf4;
+}
+
+.framework-cell-filled:hover {
+  background: #dcfce7;
+}
+
+.framework-cell-count {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.framework-cell-summary {
+  font-size: 0.88rem;
+  color: #111827;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.framework-editor-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 2rem;
+}
+
+.framework-editor {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: min(600px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(13, 24, 63, 0.3);
+}
+
+.framework-excerpts {
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+.framework-summary-input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ced8f0;
+  border-radius: 10px;
+  font: inherit;
+  resize: vertical;
+  margin-bottom: 0.75rem;
+}
+
 .query-grid {
   margin-bottom: 1rem;
 }
@@ -311,10 +464,80 @@ button:disabled {
 }
 
 .chart-card {
-  height: 260px;
+  min-height: 120px;
+  max-height: 480px;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: auto;
   background: #f8faff;
+  padding: 0.75rem;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chart-controls select {
+  flex: none;
+  width: auto;
+}
+
+.chart-label {
+  font-size: 12px;
+  fill: #374151;
+}
+
+.chart-value {
+  font-size: 12px;
+  fill: #4b5563;
+}
+
+.treemap-label {
+  font-size: 12px;
+  fill: white;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: rgba(17, 24, 39, 0.55);
+  stroke-width: 3px;
+}
+
+.pie-chart-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.chart-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.chart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chart-legend-swatch {
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 3px;
+}
+
+.chart-legend-label {
+  font-weight: 600;
+  color: #111827;
+}
+
+.chart-legend-value {
+  color: #6b7280;
 }
 
 .toggle-row {
@@ -424,6 +647,20 @@ button:disabled {
   background: #eef2ff;
 }
 
+/* Imported content (e.g. a whole .docx transcript) used to flow straight
+   into the page with no boundary, so "scroll to the bottom to find the
+   classification sheet" was a real problem. Give it a fixed, scrollable
+   frame of its own instead. */
+.source-content-frame {
+  position: relative;
+  max-height: 65vh;
+  overflow-y: auto;
+  border: 1px solid #e5ebf8;
+  border-radius: 12px;
+  background: white;
+  padding: 1rem 1.25rem;
+}
+
 .source-content {
   white-space: pre-wrap;
   line-height: 1.8;
@@ -439,17 +676,70 @@ button:disabled {
   box-shadow: inset 0 -2px 0 #4c6ef5;
 }
 
+/* Floating "pick a node" toolbar: anchored to the text selection itself
+   (via inline top/left set from JS) instead of living in a static panel
+   the user has to scroll down to find. */
 .code-popover {
+  position: absolute;
+  z-index: 20;
+  transform: translate(-50%, calc(-100% - 10px));
+  width: 240px;
+  max-width: 80vw;
   border: 1px solid #dfe6f7;
   border-radius: 12px;
-  padding: 0.75rem;
+  padding: 0.6rem;
   background: white;
+  box-shadow: 0 12px 32px rgba(13, 24, 63, 0.18);
+}
+
+.code-popover::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-right: 1px solid #dfe6f7;
+  border-bottom: 1px solid #dfe6f7;
+}
+
+.node-picker-search {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.9rem;
 }
 
 .node-picker-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.node-picker-empty {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+}
+
+.node-chip {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+}
+
+.node-chip-swatch {
+  flex: 0 0 auto;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
 }
 
 .node-chip,

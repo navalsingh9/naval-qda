@@ -127,6 +127,13 @@ function createAttribute({ projectId, name, valueType = 'text' }) {
   return { id: result.lastInsertRowid, projectId, name, valueType };
 }
 
+function listAttributes(projectId) {
+  const db = getDatabase();
+  return db.prepare('SELECT id, project_id, name, value_type FROM attributes WHERE project_id = ? ORDER BY id ASC')
+    .all(projectId)
+    .map((row) => ({ id: row.id, projectId: row.project_id, name: row.name, valueType: row.value_type }));
+}
+
 function setCaseAttributeValue({ caseId, attributeId, value }) {
   const db = getDatabase();
   const caseRow = db.prepare('SELECT id, project_id FROM cases WHERE id = ?').get(caseId);
@@ -222,6 +229,7 @@ module.exports = {
   createCase,
   listCases,
   createAttribute,
+  listAttributes,
   setCaseAttributeValue,
   linkSourceToCase,
   getClassificationSheet,
