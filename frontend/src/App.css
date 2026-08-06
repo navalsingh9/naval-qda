@@ -5,6 +5,34 @@
   background: linear-gradient(135deg, #f5f7fb 0%, #eef2ff 100%);
 }
 
+.app-shell.app-shell-collapsed {
+  grid-template-columns: 56px minmax(0, 1fr);
+}
+
+.app-shell-collapsed .sidebar-header,
+.app-shell-collapsed .sidebar-section,
+.app-shell-collapsed .sidebar-nav a span:not(.sidebar-collapse-toggle) {
+  display: none;
+}
+
+.app-shell-collapsed .sidebar-nav a {
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar-collapse-toggle {
+  width: 100%;
+  background: transparent;
+  color: var(--text-2, #526080);
+  border: none;
+  text-align: right;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
 .sidebar {
   padding: 1.5rem;
   border-right: 1px solid #dfe6f7;
@@ -230,8 +258,12 @@ button:disabled {
 
 .list li span {
   color: #6b7280;
-  font-size: 0.9rem;
-  word-break: break-all;
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  display: block;
 }
 
 .error-text {
@@ -271,6 +303,11 @@ button:disabled {
 
 .query-grid {
   margin-bottom: 1rem;
+}
+
+.reports-grid {
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
 }
 
 .chart-card {

@@ -11,7 +11,7 @@ export function ReportsPage() {
         </div>
       </div>
 
-      <div className="panel-grid query-grid">
+      <div className="panel-grid reports-grid">
         <CodingReportPanel />
         <ProjectSummaryPanel />
       </div>

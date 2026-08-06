@@ -5,6 +5,7 @@ import { useProjectStore } from '../stores/useProjectStore'
 export function SidebarLayout() {
   const { projects, selectedProjectId, selectProject, deleteProject } = useProjectStore()
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
+  const [collapsed, setCollapsed] = useState(false)
 
   const handleDeleteClick = (projectId: number) => {
     setPendingDeleteId(projectId)
@@ -16,8 +17,16 @@ export function SidebarLayout() {
   }
 
   return (
-    <div className="app-shell">
+    <div className={collapsed ? 'app-shell app-shell-collapsed' : 'app-shell'}>
       <aside className="sidebar">
+        <button
+          type="button"
+          className="sidebar-collapse-toggle"
+          onClick={() => setCollapsed((value) => !value)}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {collapsed ? '»' : '«'}
+        </button>
         <div className="sidebar-header">
           <p className="eyebrow">NAVAL-QDA</p>
           <h1>Workspace</h1>
@@ -62,12 +71,12 @@ export function SidebarLayout() {
         </div>
 
         <nav className="sidebar-nav">
-          <NavLink to="/sources">Sources</NavLink>
-          <NavLink to="/coding">Coding</NavLink>
-          <NavLink to="/query">Query</NavLink>
-          <NavLink to="/visualizations">Visualizations</NavLink>
-          <NavLink to="/ai">AI</NavLink>
-          <NavLink to="/reports">Reports</NavLink>
+          <NavLink to="/sources"><span>Sources</span></NavLink>
+          <NavLink to="/coding"><span>Coding</span></NavLink>
+          <NavLink to="/query"><span>Query</span></NavLink>
+          <NavLink to="/visualizations"><span>Visualizations</span></NavLink>
+          <NavLink to="/reports"><span>Reports</span></NavLink>
+          <NavLink to="/ai"><span>AI</span></NavLink>
         </nav>
       </aside>
 

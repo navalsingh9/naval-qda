@@ -18,8 +18,8 @@ function App() {
           <Route path="/coding" element={<CodingWorkspacePage />} />
           <Route path="/query" element={<QueryWorkspacePage />} />
           <Route path="/visualizations" element={<VisualizationsPage />} />
-          <Route path="/ai" element={<AiSettingsPanel />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/ai" element={<AiSettingsPanel />} />
         </Route>
       </Routes>
     </HashRouter>

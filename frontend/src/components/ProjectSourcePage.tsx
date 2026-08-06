@@ -81,10 +81,6 @@ export function ProjectSourcePage() {
       <input ref={fileInputRef} type="file" accept=".txt,.docx,.pdf" multiple hidden onChange={handleFileSelected} />
 
       <div className="panel-grid">
-        <CasesPanel projectId={selectedProjectId} onChange={() => setRefreshToken((t) => t + 1)} />
-      </div>
-
-      <div className="panel-grid">
         <div className="panel">
           <h3>Create project</h3>
           <div className="inline-form">
@@ -96,7 +92,13 @@ export function ProjectSourcePage() {
           {projectError ? <p className="error-text">{projectError}</p> : null}
           {projectError ? <button type="button" className="ghost-button" onClick={() => clearProjectError()}>Dismiss</button> : null}
         </div>
+      </div>
 
+      <div className="panel-grid">
+        <CasesPanel projectId={selectedProjectId} onChange={() => setRefreshToken((t) => t + 1)} />
+      </div>
+
+      <div className="panel-grid">
         <div
           className={`panel drop-zone${isDraggingOver ? ' drop-zone-active' : ''}`}
           onDragOver={handleDragOver}
@@ -110,7 +112,7 @@ export function ProjectSourcePage() {
             {sources.map((source) => (
               <li key={source.id}>
                 <strong>{source.title}</strong>
-                <span>{source.file_path}</span>
+                <span className="source-path" title={source.file_path}>{source.file_path.split(/[\\/]/).pop()}</span>
                 <select
                   value=""
                   onChange={(event) => {
