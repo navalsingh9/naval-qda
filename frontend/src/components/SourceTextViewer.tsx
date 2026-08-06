@@ -112,18 +112,35 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
 
   const handleMouseUp = () => {
     const selection = window.getSelection()
-    if (!selection || selection.rangeCount === 0) return
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return
 
     const range = selection.getRangeAt(0)
     const container = containerRef.current
     if (!container || !source?.content) return
 
     const contentNode = container.querySelector('[data-content="true"]') as HTMLElement | null
-    if (!contentNode) return
+    if (!contentNode || !contentNode.contains(range.commonAncestorContainer)) return
 
-    const startOffset = Number(contentNode.dataset.startOffset ?? '0')
-    const selectionStart = Math.max(0, Math.min(source.content.length, startOffset + range.startOffset))
-    const selectionEnd = Math.max(0, Math.min(source.content.length, startOffset + range.endOffset))
+    // range.startOffset/endOffset are only character offsets when the boundary
+    // lands inside a text node. When a boundary lands on an element (e.g. the
+    // user drags past the last character of a line, or double-clicks a word),
+    // the browser reports a child-node index instead, which silently breaks a
+    // naive `contentOffset + range.startOffset` calculation. Measure the
+    // actual rendered text length up to each boundary instead, which is
+    // correct in both cases.
+    const measureOffset = (node: Node, offset: number) => {
+      const measureRange = document.createRange()
+      measureRange.selectNodeContents(contentNode)
+      measureRange.setEnd(node, offset)
+      return measureRange.toString().length
+    }
+
+    const baseOffset = Number(contentNode.dataset.startOffset ?? '0')
+    const rawStart = measureOffset(range.startContainer, range.startOffset)
+    const rawEnd = measureOffset(range.endContainer, range.endOffset)
+
+    const selectionStart = Math.max(0, Math.min(source.content.length, baseOffset + Math.min(rawStart, rawEnd)))
+    const selectionEnd = Math.max(0, Math.min(source.content.length, baseOffset + Math.max(rawStart, rawEnd)))
     if (selectionEnd <= selectionStart) return
 
     setSelectionRange({ start: selectionStart, end: selectionEnd })
