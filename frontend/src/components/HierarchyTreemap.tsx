@@ -31,11 +31,13 @@ export function HierarchyTreemap() {
 
   return (
     <div className="panel">
-      <h3>Hierarchy treemap</h3>
+      <div className="page-header">
+        <h3>🗺️ Hierarchy treemap</h3>
+      </div>
       <p className="description">Box area is proportional to coding references — nested boxes show child nodes within their parent.</p>
       {loading ? <p className="description">Loading…</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
-      <div className="chart-card">
+      <div className="chart-card" style={{ minHeight: '400px', background: 'var(--bg-secondary)' }}>
         {data.length && hasCodings ? (
           <Treemap data={data} />
         ) : !loading ? (

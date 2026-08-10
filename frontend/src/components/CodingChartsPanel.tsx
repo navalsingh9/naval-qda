@@ -89,7 +89,9 @@ export function CodingChartsPanel() {
   return (
     <div className="panel">
       <div className="page-header">
-        <h3>Coding charts</h3>
+        <div>
+          <h3>📊 Coding charts</h3>
+        </div>
         <div className="chart-controls">
           <select value={measure} onChange={(event) => setMeasure(event.target.value as Measure)}>
             <option value="references">References</option>
@@ -104,16 +106,16 @@ export function CodingChartsPanel() {
       <p className="description">Coding {measure === 'references' ? 'references' : 'distinct sources coded'} per node.</p>
       {loading ? <p className="description">Loading…</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
-      <div className="chart-card">
+      <div className="chart-card" style={{ minHeight: '300px', background: 'var(--bg-secondary)' }}>
         {barData.length ? (
-          chartKind === 'bar' ? <BarChart data={barData} /> : <PieChart data={barData} />
+          chartKind === 'bar' ? <BarChart data={barData} /> : <PieChart data={barData} donut={true} />
         ) : !loading ? (
           <p className="description">No coded text yet — code some sources to see coding charts.</p>
         ) : null}
       </div>
 
       <div className="node-ai-suggest">
-        <h4>Coding by attribute</h4>
+        <h4>🎯 Coding by attribute</h4>
         {!attributes.length ? (
           <p className="description">Add a case attribute (in Sources → Cases) to break coding down by it, e.g. by Role or Team size.</p>
         ) : (

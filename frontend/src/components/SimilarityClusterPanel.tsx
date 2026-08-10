@@ -89,8 +89,11 @@ export function SimilarityClusterPanel() {
   return (
     <div className="panel">
       <div className="page-header">
-        <h3>Similarity clustering</h3>
+        <div>
+          <h3>🔗 Similarity clustering</h3>
+        </div>
       </div>
+      <p className="description">Compare your sources based on word usage or coding patterns to discover relationships.</p>
       <div className="inline-form">
         <label className="field-label" style={{ flex: 1 }}>
           Compare by
@@ -100,7 +103,7 @@ export function SimilarityClusterPanel() {
           </select>
         </label>
         <button type="button" onClick={runClustering} disabled={loading || !selectedProjectId || sources.length === 0}>
-          {loading ? 'Clustering…' : 'Run clustering'}
+          {loading ? '🔄 Clustering…' : 'Run clustering'}
         </button>
       </div>
 
@@ -108,9 +111,9 @@ export function SimilarityClusterPanel() {
       {!sources.length ? <p className="description">Import sources to compare similarity between them.</p> : null}
 
       {result?.linkage?.length ? (
-        <div className="sheet-table-wrap">
+        <div className="sheet-table-wrap" style={{ background: 'var(--bg-primary)', borderRadius: 'var(--radius-lg)' }}>
           {displayTree ? (
-            <div className="chart-card" style={{ marginBottom: '0.75rem' }}>
+            <div className="chart-card" style={{ marginBottom: 'var(--space-4)', background: 'var(--bg-secondary)' }}>
               <Dendrogram tree={displayTree} />
             </div>
           ) : null}

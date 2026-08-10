@@ -3,10 +3,43 @@
 // handful of chart types — plain SVG with viewBox-based scaling covers
 // bar/pie/treemap/dendrogram cleanly and keeps the bundle small.
 
-export const CHART_COLORS = ['#4c6ef5', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16', '#0ea5e9', '#f97316']
+// Modern Slack-inspired color palette for charts
+// Using a more sophisticated color palette with better contrast and aesthetics
+export const CHART_COLORS = [
+  '#7c3aed', // Brand purple
+  '#3b82f6', // Brand blue
+  '#10b981', // Success green
+  '#f59e0b', // Warning amber
+  '#ef4444', // Error red
+  '#06b6d4', // Cyan
+  '#ec4899', // Pink
+  '#84cc16', // Lime green
+  '#1e40af', // Dark blue
+  '#db2777', // Magenta
+  '#059669', // Emerald
+  '#ea580c', // Orange
+]
+
+// Lighter versions for better visibility in charts
+export const CHART_COLORS_LIGHT = [
+  '#a855f7',
+  '#60a5fa',
+  '#34d399',
+  '#fbbf24',
+  '#f87171',
+  '#22d3ee',
+  '#f472b6',
+  '#a3e635',
+  '#3b82f6',
+  '#ec4899',
+]
 
 export function colorFor(index: number) {
   return CHART_COLORS[index % CHART_COLORS.length]
+}
+
+export function colorForLight(index: number) {
+  return CHART_COLORS_LIGHT[index % CHART_COLORS_LIGHT.length]
 }
 
 // ---------------------------------------------------------------------
@@ -16,28 +49,69 @@ export function colorFor(index: number) {
 // ---------------------------------------------------------------------
 export type BarDatum = { label: string; value: number; color?: string }
 
-export function BarChart({ data, height = 22 }: { data: BarDatum[]; height?: number }) {
+export function BarChart({ data, height = 24 }: { data: BarDatum[]; height?: number }) {
   const maxValue = Math.max(1, ...data.map((d) => d.value))
   const rowHeight = height
-  const gap = 6
+  const gap = 8
   const chartHeight = data.length * (rowHeight + gap)
-  const labelWidth = 160
-  const chartWidth = 520
+  const labelWidth = 180
+  const chartWidth = 600
 
   if (!data.length) return null
 
   return (
-    <svg className="chart-svg" viewBox={`0 0 ${labelWidth + chartWidth + 48} ${chartHeight}`} width="100%" style={{ height: chartHeight }}>
+    <svg 
+      className="chart-svg" 
+      viewBox={`0 0 ${labelWidth + chartWidth + 48} ${chartHeight}`} 
+      width="100%" 
+      style={{ height: chartHeight }}
+    >
       {data.map((d, i) => {
         const y = i * (rowHeight + gap)
         const barWidth = (d.value / maxValue) * chartWidth
+        const barColor = d.color ?? colorFor(i)
         return (
           <g key={d.label}>
-            <text x={labelWidth - 8} y={y + rowHeight * 0.7} textAnchor="end" className="chart-label">
+            {/* Label */}
+            <text 
+              x={labelWidth - 8} 
+              y={y + rowHeight * 0.7} 
+              textAnchor="end" 
+              className="chart-label"
+              style={{ fontFamily: 'var(--font-family)' }}
+            >
               {d.label}
             </text>
-            <rect x={labelWidth} y={y} width={Math.max(2, barWidth)} height={rowHeight} rx={4} fill={d.color ?? colorFor(i)} />
-            <text x={labelWidth + barWidth + 8} y={y + rowHeight * 0.7} className="chart-value">
+            
+            {/* Bar */}
+            <rect 
+              x={labelWidth} 
+              y={y + 2} 
+              width={Math.max(4, barWidth)} 
+              height={rowHeight - 4} 
+              rx={6} 
+              fill={barColor}
+              opacity={0.85}
+            />
+            
+            {/* Bar background for better visibility */}
+            <rect 
+              x={labelWidth} 
+              y={y} 
+              width={chartWidth} 
+              height={rowHeight} 
+              rx={6} 
+              fill="transparent"
+              stroke="transparent"
+            />
+            
+            {/* Value */}
+            <text 
+              x={labelWidth + barWidth + 12} 
+              y={y + rowHeight * 0.7} 
+              className="chart-value"
+              style={{ fontFamily: 'var(--font-family)' }}
+            >
               {d.value}
             </text>
           </g>
@@ -50,7 +124,7 @@ export function BarChart({ data, height = 22 }: { data: BarDatum[]; height?: num
 // ---------------------------------------------------------------------
 // Pie / donut chart with a side legend showing percentages.
 // ---------------------------------------------------------------------
-export function PieChart({ data, size = 200, donut = true }: { data: BarDatum[]; size?: number; donut?: boolean }) {
+export function PieChart({ data, size = 220, donut = true }: { data: BarDatum[]; size?: number; donut?: boolean }) {
   const total = data.reduce((sum, d) => sum + d.value, 0)
   const radius = size / 2
   const innerRadius = donut ? radius * 0.55 : 0
@@ -77,16 +151,59 @@ export function PieChart({ data, size = 200, donut = true }: { data: BarDatum[];
       ? `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix2} ${iy2} Z`
       : `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
 
-    return { path, color: d.color ?? colorFor(i), label: d.label, value: d.value, pct: fraction * 100 }
+    return { 
+      path, 
+      color: d.color ?? colorFor(i), 
+      label: d.label, 
+      value: d.value, 
+      pct: fraction * 100,
+      startAngle,
+      endAngle,
+      fraction
+    }
   })
 
   return (
-    <div className="pie-chart-row">
+    <div className="pie-chart-row" style={{ alignItems: 'flex-start' }}>
       <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
+        {/* Donut center text showing total */}
+        {donut && (
+          <text 
+            x={cx} 
+            y={cy} 
+            textAnchor="middle" 
+            dominantBaseline="middle"
+            style={{
+              fontSize: '14px',
+              fontWeight: '700',
+              fill: 'var(--text-primary)',
+              fontFamily: 'var(--font-family)'
+            }}
+          >
+            {total}
+          </text>
+        )}
+        
         {arcs.map((arc) => (
-          <path key={arc.label} d={arc.path} fill={arc.color} stroke="white" strokeWidth={1} />
+          <path 
+            key={arc.label} 
+            d={arc.path} 
+            fill={arc.color} 
+            stroke="white" 
+            strokeWidth={2} 
+            opacity={0.9}
+            filter="url(#pie-shadow)"
+          />
         ))}
+        
+        {/* Add hover effect definitions */}
+        <defs>
+          <filter id="pie-shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(0,0,0,0.1)" />
+          </filter>
+        </defs>
       </svg>
+      
       <ul className="chart-legend">
         {arcs.map((arc) => (
           <li key={arc.label}>
@@ -130,7 +247,7 @@ function layoutTreemap(nodes: TreemapNode[], x: number, y: number, w: number, h:
   }
 }
 
-export function Treemap({ data, width = 720, height = 420 }: { data: TreemapNode[]; width?: number; height?: number }) {
+export function Treemap({ data, width = 800, height = 480 }: { data: TreemapNode[]; width?: number; height?: number }) {
   const rects: LaidOutRect[] = []
   layoutTreemap(data, 0, 0, width, height, 0, rects)
   // Only render leaf-most rects (deepest at each position) so parent and
@@ -141,24 +258,76 @@ export function Treemap({ data, width = 720, height = 420 }: { data: TreemapNode
   if (!rects.length) return null
 
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ height }}>
+    <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ height, borderRadius: 'var(--radius-lg)' }}>
+      <defs>
+        <filter id="treemap-shadow" x="0" y="0" width="100%" height="100%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="rgba(0,0,0,0.1)" />
+        </filter>
+      </defs>
+      
       {rects.map((r, i) => {
         const isLeafDepth = r.depth === maxDepth
+        const colorIndex = i % CHART_COLORS.length
+        const bgColor = isLeafDepth ? colorFor(colorIndex) : 'transparent'
+        
         return (
           <g key={`${r.name}-${i}`}>
+            {/* Main rectangle */}
             <rect
               x={r.x}
               y={r.y}
-              width={Math.max(0, r.w - 2)}
-              height={Math.max(0, r.h - 2)}
-              fill={isLeafDepth ? colorFor(i) : 'none'}
-              fillOpacity={isLeafDepth ? 0.75 : 1}
+              width={Math.max(0, r.w - 1)}
+              height={Math.max(0, r.h - 1)}
+              fill={bgColor}
+              fillOpacity={isLeafDepth ? 0.85 : 0.3}
               stroke="#ffffff"
-              strokeWidth={2}
+              strokeWidth={1}
+              filter="url(#treemap-shadow)"
+              rx={4}
             />
-            {r.w > 50 && r.h > 18 ? (
-              <text x={r.x + 6} y={r.y + 16} className="treemap-label">
-                {r.name} ({r.value})
+            
+            {/* Hover effect area (transparent but clickable) */}
+            <rect
+              x={r.x}
+              y={r.y}
+              width={Math.max(0, r.w - 1)}
+              height={Math.max(0, r.h - 1)}
+              fill="transparent"
+              stroke="transparent"
+              className="treemap-hover-area"
+              style={{ cursor: 'pointer' }}
+              rx={4}
+            />
+            
+            {/* Label - improved placement and styling */}
+            {r.w > 60 && r.h > 20 ? (
+              <text 
+                x={r.x + 8} 
+                y={r.y + 16} 
+                className="treemap-label"
+                style={{
+                  fontFamily: 'var(--font-family)',
+                  fontSize: '11px',
+                  fontWeight: '600'
+                }}
+              >
+                {r.name.length > 20 ? `${r.name.substring(0, 17)}...` : r.name}
+              </text>
+            ) : null}
+            
+            {/* Value - smaller and positioned below name if space allows */}
+            {r.w > 60 && r.h > 30 ? (
+              <text 
+                x={r.x + 8} 
+                y={r.y + 28} 
+                style={{
+                  fontFamily: 'var(--font-family)',
+                  fontSize: '10px',
+                  fill: 'rgba(255,255,255,0.8)',
+                  fontWeight: '400'
+                }}
+              >
+                {r.value}
               </text>
             ) : null}
           </g>
@@ -180,7 +349,7 @@ export type DendroNode =
 
 type Positioned = { x: number; y: number; node: DendroNode }
 
-export function Dendrogram({ tree, width = 640 }: { tree: DendroNode | null; width?: number }) {
+export function Dendrogram({ tree, width = 700 }: { tree: DendroNode | null; width?: number }) {
   if (!tree) return null
 
   const leaves: { id: number; label: string }[] = []
@@ -193,10 +362,10 @@ export function Dendrogram({ tree, width = 640 }: { tree: DendroNode | null; wid
   }
   collectLeaves(tree)
 
-  const rowHeight = 26
+  const rowHeight = 28
   const height = Math.max(rowHeight, leaves.length * rowHeight)
-  const labelWidth = 170
-  const treeWidth = width - labelWidth - 20
+  const labelWidth = 200
+  const treeWidth = width - labelWidth - 30
   const maxHeight = tree.type === 'node' ? tree.height : 1
 
   const positions = new Map<DendroNode, Positioned>()
@@ -236,17 +405,58 @@ export function Dendrogram({ tree, width = 640 }: { tree: DendroNode | null; wid
 
   return (
     <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ height }}>
-      <g transform={`translate(${labelWidth}, 0)`}>
+      <defs>
+        <marker 
+          id="arrowhead" 
+          markerWidth="10" 
+          markerHeight="7" 
+          refX="9" 
+          refY="3.5" 
+          orient="auto"
+        >
+          <polygon points="0 0, 10 3.5, 0 7" fill="var(--border-dark)" />
+        </marker>
+      </defs>
+      
+      <g transform={`translate(${labelWidth + 10}, 0)`}>
         {lines.map((line, i) => (
-          <line key={i} x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="#94a3b8" strokeWidth={1.5} />
+          <line 
+            key={i} 
+            x1={line.x1} 
+            y1={line.y1} 
+            x2={line.x2} 
+            y2={line.y2} 
+            stroke="var(--border-medium)" 
+            strokeWidth={1.5} 
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         ))}
       </g>
+      
       {leaves.map((leaf, i) => (
         <g key={leaf.id}>
-          <text x={labelWidth - 8} y={i * rowHeight + rowHeight / 2 + 4} textAnchor="end" className="chart-label">
-            {leaf.label}
+          <text 
+            x={labelWidth - 8} 
+            y={i * rowHeight + rowHeight / 2 + 4} 
+            textAnchor="end" 
+            className="chart-label"
+            style={{
+              fontFamily: 'var(--font-family)',
+              fontSize: '12px',
+              fill: 'var(--text-secondary)'
+            }}
+          >
+            {leaf.label.length > 25 ? `${leaf.label.substring(0, 22)}...` : leaf.label}
           </text>
-          <circle cx={labelWidth} cy={i * rowHeight + rowHeight / 2} r={3} fill={colorFor(i)} />
+          <circle 
+            cx={labelWidth + 5} 
+            cy={i * rowHeight + rowHeight / 2} 
+            r={4} 
+            fill={colorFor(i)} 
+            stroke="white" 
+            strokeWidth={1}
+          />
         </g>
       ))}
     </svg>

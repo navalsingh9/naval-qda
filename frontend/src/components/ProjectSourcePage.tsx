@@ -74,11 +74,12 @@ export function ProjectSourcePage() {
     <section className="page-card">
       <div className="page-header">
         <div>
-          <p className="eyebrow">Project &amp; source management</p>
+          <p className="eyebrow">📁 Project & source management</p>
           <h2>Sources</h2>
+          <p className="description">Import documents, organize cases, and manage your coding framework</p>
         </div>
         <button type="button" onClick={handleImportClick} disabled={!selectedProjectId || loading}>
-          Import source
+          📥 Import source
         </button>
       </div>
 

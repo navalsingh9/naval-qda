@@ -24,21 +24,52 @@ export function VisualizationsPage() {
       <div className="page-header">
         <div>
           <p className="eyebrow">Visualizations</p>
-          <h2>Charts, word cloud, hierarchy, and similarity views</h2>
+          <h2>Explore your data through interactive charts and visualizations</h2>
         </div>
       </div>
 
-      <div className="panel-grid query-grid">
+      <p className="description">
+        Get insights into your qualitative data with various visualization types. 
+        Charts update automatically as you code and analyze your sources.
+      </p>
+
+      {/* Coding Charts Section */}
+      <div className="coding-grid">
         <CodingChartsPanel />
-        <WordCloud />
       </div>
 
-      <div className="panel-grid query-grid">
-        <HierarchyTreemap />
+      {/* Two Column Layout for Word Cloud and Hierarchy */}
+      <div className="panel-grid">
+        <div className="w-full">
+          <WordCloud />
+        </div>
+        <div className="w-full">
+          <HierarchyTreemap />
+        </div>
       </div>
 
-      <div className="panel-grid query-grid">
+      {/* Full width for Similarity Clustering */}
+      <div className="panel-grid grid-cols-1">
         <SimilarityClusterPanel />
+      </div>
+
+      {/* Visualization Tips */}
+      <div className="panel" style={{ marginTop: 'var(--space-6)' }}>
+        <h3>Tips</h3>
+        <ul className="list">
+          <li>
+            <span>💡 <strong>Coding Charts:</strong> Visualize how your codes are distributed across sources</span>
+          </li>
+          <li>
+            <span>☁️ <strong>Word Cloud:</strong> See the most frequent terms in your imported sources</span>
+          </li>
+          <li>
+            <span>🗺️ <strong>Hierarchy Treemap:</strong> Understand the structure of your coding framework</span>
+          </li>
+          <li>
+            <span>🔗 <strong>Similarity Clustering:</strong> Discover patterns and relationships between your sources</span>
+          </li>
+        </ul>
       </div>
     </section>
   )

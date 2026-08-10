@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useProjectStore } from '../stores/useProjectStore'
 import { useSourceStore } from '../stores/useSourceStore'
+import { CHART_COLORS } from './charts/Charts'
 
 type WordCloudRow = { word: string; weight: number }
 
@@ -30,7 +31,7 @@ export function WordCloud() {
           projectId: selectedProjectId,
           sourceIds,
           minLength: 4,
-          topN: 60,
+          topN: 80,
         }) as WordCloudRow[]
         setWords(data)
       } catch (err) {
@@ -47,26 +48,58 @@ export function WordCloud() {
   const minWeight = useMemo(() => (words.length ? Math.min(...words.map((word) => word.weight)) : 0), [words])
 
   const sizeFor = (weight: number) => {
-    if (maxWeight === minWeight) return 18
+    if (maxWeight === minWeight) return 20
     const ratio = (weight - minWeight) / (maxWeight - minWeight)
-    return 12 + ratio * 26
+    return 14 + ratio * 32
+  }
+
+  const colorFor = (index: number) => {
+    return CHART_COLORS[index % CHART_COLORS.length]
   }
 
   return (
     <div className="panel">
-      <h3>Word cloud</h3>
+      <div className="page-header">
+        <h3>Word cloud</h3>
+      </div>
       {loading ? <p className="description">Loading…</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
       <div
         className="chart-card"
-        style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', padding: '1rem', overflow: 'auto' }}
+        style={{
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          gap: 'var(--space-4)', 
+          padding: 'var(--space-5)', 
+          overflow: 'auto',
+          minHeight: '200px'
+        }}
       >
         {words.length ? (
-          words.map((word) => (
+          words.map((word, index) => (
             <span
               key={word.word}
               title={`${word.word}: ${word.weight}`}
-              style={{ fontSize: `${sizeFor(word.weight)}px`, fontWeight: 700, color: '#3730a3', lineHeight: 1 }}
+              style={{
+                fontSize: `${sizeFor(word.weight)}px`, 
+                fontWeight: 700, 
+                color: colorFor(index),
+                lineHeight: 1.2,
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                transition: 'transform 0.2s ease, color 0.2s ease',
+                cursor: 'pointer',
+                padding: 'var(--space-1) var(--space-2)',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(255,255,255,0.8)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'scale(1.1)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
             >
               {word.word}
             </span>
