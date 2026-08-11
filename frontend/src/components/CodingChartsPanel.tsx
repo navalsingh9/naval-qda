@@ -90,7 +90,7 @@ export function CodingChartsPanel() {
     <div className="panel">
       <div className="page-header">
         <div>
-          <h3>📊 Coding charts</h3>
+          <h3>Coding charts</h3>
         </div>
         <div className="chart-controls">
           <select value={measure} onChange={(event) => setMeasure(event.target.value as Measure)}>
@@ -117,7 +117,7 @@ export function CodingChartsPanel() {
       {/* Coding by attribute - separate section */}
       <div className="node-ai-suggest" style={{ marginTop: 'var(--space-6)' }}>
         <div className="page-header">
-          <h4>🎯 Coding by attribute</h4>
+          <h4>Coding by attribute</h4>
         </div>
         {!attributes.length ? (
           <p className="description">Add a case attribute (in Sources → Cases) to break coding down by it, e.g. by Role or Team size.</p>

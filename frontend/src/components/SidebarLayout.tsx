@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useProjectStore } from '../stores/useProjectStore'
 
-// Navigation items with icons (using emoji for simplicity)
+// Navigation items with professional unique icons
 const navItems = [
-  { to: '/sources', label: 'Sources', icon: '📁' },
+  { to: '/sources', label: 'Sources', icon: '📂' },
   { to: '/coding', label: 'Coding', icon: '🏷️' },
   { to: '/query', label: 'Query', icon: '🔍' },
   { to: '/visualizations', label: 'Visualizations', icon: '📊' },
@@ -29,20 +29,30 @@ export function SidebarLayout() {
   return (
     <div className={collapsed ? 'app-shell app-shell-collapsed' : 'app-shell'}>
       <aside className="sidebar">
-        <button
-          type="button"
-          className="sidebar-collapse-toggle"
-          onClick={() => setCollapsed((value) => !value)}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? '›' : '‹'}
-        </button>
-        
         <div className="sidebar-header">
-          <p className="eyebrow">
-            <span style={{ fontSize: '1.2em' }}>🎯</span> NAVAL-QDA
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <p className="eyebrow">
+              <span style={{ fontSize: '1.2em' }}>🔬</span> NAVAL-QDA
+            </p>
+            <button
+              type="button"
+              className="sidebar-collapse-toggle"
+              onClick={() => setCollapsed((value) => !value)}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              style={{ 
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: 'var(--space-1)',
+                fontSize: '1.2em',
+                lineHeight: 1
+              }}
+            >
+              {collapsed ? '›' : '‹'}
+            </button>
+          </div>
           <h1>Workspace</h1>
         </div>
 
@@ -110,7 +120,7 @@ export function SidebarLayout() {
                           minWidth: 0
                         }}
                       >
-                        <span className="project-icon" style={{ fontSize: '0.9em' }}>📂</span>
+                        <span className="project-icon" style={{ fontSize: '0.9em' }}>📁</span>
                         <span className="project-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {project.name}
                         </span>

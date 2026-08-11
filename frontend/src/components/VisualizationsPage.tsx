@@ -49,16 +49,16 @@ export function VisualizationsPage() {
         <h3>Tips</h3>
         <ul className="list">
           <li>
-            <span>💡 <strong>Coding Charts:</strong> Visualize how your codes are distributed across sources</span>
+            <span><strong>Coding Charts:</strong> Visualize how your codes are distributed across sources</span>
           </li>
           <li>
-            <span>☁️ <strong>Word Cloud:</strong> See the most frequent terms in your imported sources</span>
+            <span><strong>Word Cloud:</strong> See the most frequent terms in your imported sources</span>
           </li>
           <li>
-            <span>🗺️ <strong>Hierarchy Treemap:</strong> Understand the structure of your coding framework</span>
+            <span><strong>Hierarchy Treemap:</strong> Understand the structure of your coding framework</span>
           </li>
           <li>
-            <span>🔗 <strong>Similarity Clustering:</strong> Discover patterns and relationships between your sources</span>
+            <span><strong>Similarity Clustering:</strong> Discover patterns and relationships between your sources</span>
           </li>
         </ul>
       </div>

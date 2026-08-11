@@ -32,7 +32,7 @@ export function HierarchyTreemap() {
   return (
     <div className="panel">
       <div className="page-header">
-        <h3>🗺️ Hierarchy treemap</h3>
+        <h3>Hierarchy treemap</h3>
       </div>
       <p className="description">Box area is proportional to coding references — nested boxes show child nodes within their parent.</p>
       {loading ? <p className="description">Loading…</p> : null}

@@ -90,7 +90,7 @@ export function SimilarityClusterPanel() {
     <div className="panel">
       <div className="page-header">
         <div>
-          <h3>🔗 Similarity clustering</h3>
+          <h3>Similarity clustering</h3>
         </div>
       </div>
       <p className="description">Compare your sources based on word usage or coding patterns to discover relationships.</p>
@@ -103,7 +103,7 @@ export function SimilarityClusterPanel() {
           </select>
         </label>
         <button type="button" onClick={runClustering} disabled={loading || !selectedProjectId || sources.length === 0}>
-          {loading ? '🔄 Clustering…' : 'Run clustering'}
+          {loading ? 'Clustering…' : 'Run clustering'}
         </button>
       </div>
 

@@ -249,7 +249,7 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
         <>
           <div className="source-header">
             <h3>{source.title}</h3>
-            <span className="description">Select text, then pick a node from the popup to code it.</span>
+            <span className="description">Select text to see a node search bar, then pick or search for a node to code it.</span>
           </div>
           <div className="source-content-wrap">
             <MediaPlayer
@@ -267,17 +267,24 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
                 <div data-content="true" data-start-offset="0" data-end-offset={source.content.length}>
                   {spans.map((segment) => {
                     const isHighlighted = highlightActive && highlightOffset != null && highlightOffset >= segment.start && highlightOffset < segment.end
+                    
+                    // Better highlighting: use 20% opacity for single node, 30% for multiple
                     const background = segment.coveringNodes.length === 0
                       ? 'transparent'
                       : segment.coveringNodes.length === 1
-                        ? `${getNodeColor(segment.coveringNodes[0].node_id)}33`
-                        : 'repeating-linear-gradient(135deg, transparent 0 4px, #dbeafe 4px 8px)'
+                        ? `${getNodeColor(segment.coveringNodes[0].node_id)}40`  // 25% opacity
+                        : 'repeating-linear-gradient(135deg, transparent 0 4px, rgba(139, 92, 246, 0.2) 4px 8px)'
 
                     return (
                       <span
                         key={`${segment.start}-${segment.end}`}
                         className={`source-span${isHighlighted ? ' highlight' : ''}`}
-                        style={{ background }}
+                        style={{ 
+                          background,
+                          padding: '0 2px',
+                          borderRadius: '2px',
+                          transition: 'background 0.2s ease'
+                        }}
                         title={segment.coveringNodes.length ? segment.coveringNodes.map((c) => flattenedNodes.find((n) => n.id === c.node_id)?.name ?? '').filter(Boolean).join(', ') : undefined}
                       >
                         {source.content.slice(segment.start, segment.end)}
