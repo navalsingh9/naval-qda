@@ -15,15 +15,38 @@
 }
 
 .app-shell-collapsed .sidebar-header,
-.app-shell-collapsed .sidebar-section,
-.app-shell-collapsed .sidebar-nav a span:not(.sidebar-collapse-toggle) {
+.app-shell-collapsed .sidebar-section h2 {
   display: none;
 }
 
+.app-shell-collapsed .sidebar-nav a .nav-label {
+  display: none;
+}
+
+.app-shell-collapsed .sidebar-nav a .nav-icon {
+  margin-right: 0 !important;
+}
+
 .app-shell-collapsed .sidebar-nav a {
-  text-align: center;
+  justify-content: center;
   padding-left: 0;
   padding-right: 0;
+}
+
+.app-shell-collapsed .project-row button:first-child .project-name {
+  display: none;
+}
+
+.app-shell-collapsed .project-row button:first-child .project-icon {
+  margin-right: 0 !important;
+}
+
+.app-shell-collapsed .project-row {
+  justify-content: center;
+}
+
+.app-shell-collapsed .project-delete-button {
+  display: none;
 }
 
 /* Sidebar Collapse Toggle */

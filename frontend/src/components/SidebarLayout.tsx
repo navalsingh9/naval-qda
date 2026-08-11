@@ -110,8 +110,8 @@ export function SidebarLayout() {
                           minWidth: 0
                         }}
                       >
-                        <span style={{ fontSize: '0.9em' }}>📂</span>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span className="project-icon" style={{ fontSize: '0.9em' }}>📂</span>
+                        <span className="project-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {project.name}
                         </span>
                       </button>
@@ -147,8 +147,10 @@ export function SidebarLayout() {
               to={item.to}
               className={({ isActive }) => (isActive ? 'active' : '')}
             >
-              {!collapsed && <span style={{ fontSize: '1.1em', marginRight: 'var(--space-2)' }}>{item.icon}</span>}
-              <span>{item.label}</span>
+              <span className="nav-icon" style={{ fontSize: '1.1em', marginRight: collapsed ? '0' : 'var(--space-2)' }}>
+                {item.icon}
+              </span>
+              <span className="nav-label">{item.label}</span>
             </NavLink>
           ))}
         </nav>
