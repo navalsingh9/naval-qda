@@ -71,20 +71,23 @@
   border-color: var(--border-medium);
 }
 
-/* Sidebar */
+/* Sidebar - Slack/Discord inspired */
 .sidebar {
   padding: var(--space-5);
   border-right: 1px solid var(--border-light);
   background: var(--sidebar-bg);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   height: 100vh;
   overflow-y: auto;
+  transition: width var(--transition-normal);
 }
 
 .sidebar-header {
   margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .sidebar-header .eyebrow {
@@ -94,6 +97,9 @@
   color: var(--brand-600);
   text-transform: uppercase;
   margin-bottom: var(--space-1);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .sidebar-header h1 {
@@ -110,9 +116,9 @@
 
 .sidebar-section h2 {
   margin: 0 0 var(--space-3);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   font-weight: var(--font-semibold);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -151,23 +157,38 @@
   border-color: var(--border-light);
 }
 
-.sidebar-list .active button,
+.sidebar-list .active button:first-child,
 .sidebar-nav a.active {
-  border-color: var(--brand-500);
   background: var(--brand-50);
   color: var(--brand-700);
   font-weight: var(--font-semibold);
 }
 
-/* Project Row */
+.sidebar-list .active button:first-child {
+  border-radius: var(--radius-md);
+}
+
+/* Project Row - Professional styling */
 .project-row {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-3);
   align-items: center;
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  transition: background-color var(--transition-fast);
+}
+
+.project-row:hover {
+  background: var(--bg-hover);
 }
 
 .project-row button {
   width: auto;
+  background: transparent;
+  border: none;
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  transition: all var(--transition-fast);
 }
 
 .project-row button:first-child {
@@ -177,6 +198,32 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: left;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+
+.project-row button:first-child:hover {
+  background: var(--brand-50);
+  color: var(--brand-700);
+  border-radius: var(--radius-md);
+}
+
+.project-row button.active {
+  background: var(--brand-100);
+  color: var(--brand-800);
+}
+
+/* Project icon */
+.project-icon {
+  font-size: 0.9em;
+  transition: transform var(--transition-fast);
+}
+
+.project-row button:first-child:hover .project-icon {
+  transform: scale(1.1);
 }
 
 .project-delete-button {
@@ -210,7 +257,7 @@
   color: var(--error-700);
 }
 
-/* Sidebar Navigation */
+/* Sidebar Navigation - Discord-like */
 .sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -221,8 +268,35 @@
 }
 
 .sidebar-nav a {
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-3);
   font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  transition: all var(--transition-fast);
+}
+
+.sidebar-nav a:hover {
+  background: var(--bg-hover);
+}
+
+.sidebar-nav a.active {
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+
+/* Navigation icon styling */
+.nav-icon {
+  font-size: 1.2em;
+  transition: transform var(--transition-fast);
+}
+
+.sidebar-nav a:hover .nav-icon {
+  transform: scale(1.1);
+}
+
+.sidebar-nav a.active .nav-icon {
+  transform: scale(1.1);
 }
 
 /* Content Panel */
@@ -232,16 +306,21 @@
   height: 100vh;
 }
 
-/* Page Card */
+/* Page Card - Obsidian-like clean design */
 .page-card {
   background: var(--bg-primary);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
   padding: var(--space-8);
   box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-normal);
 }
 
-/* Eyebrow */
+.page-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* Eyebrow - Slack/Discord style category label */
 .eyebrow {
   font-size: var(--text-xs);
   font-weight: var(--font-bold);
@@ -249,9 +328,13 @@
   color: var(--brand-600);
   text-transform: uppercase;
   margin-bottom: var(--space-2);
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  background: var(--brand-50);
+  border-radius: var(--radius-sm);
 }
 
-/* Description */
+/* Description - Obsidian-like muted text */
 .description {
   margin: var(--space-3) 0 var(--space-5);
   color: var(--text-secondary);
@@ -259,30 +342,44 @@
   font-size: var(--text-sm);
 }
 
-/* Page Header */
+/* Page Header - Professional layout */
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-4);
   margin-bottom: var(--space-6);
   flex-wrap: wrap;
 }
 
-/* Panel Grid */
+/* Panel Grid - 2 columns for charts */
 .panel-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-6);
 }
 
-/* Panel */
+/* Panel - Obsidian-like card */
 .panel {
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: var(--space-5);
   background: var(--bg-primary);
   box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
+}
+
+.panel:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-medium);
+}
+
+.panel h3 {
+  margin: 0 0 var(--space-4);
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
 .panel h3 {
@@ -311,7 +408,7 @@
   align-items: end;
 }
 
-/* Form Elements */
+/* Form Elements - Obsidian/Discord quality */
 input,
 select,
 textarea {
@@ -323,7 +420,7 @@ textarea {
   font-size: var(--text-sm);
   color: var(--text-primary);
   background: var(--bg-primary);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 input:focus,
@@ -331,11 +428,30 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--brand-500);
-  box-shadow: 0 0 0 3px var(--brand-100);
+  box-shadow: 0 0 0 3px var(--brand-100), 0 0 0 1px var(--brand-500);
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--border-medium);
 }
 
 input::placeholder {
   color: var(--text-muted);
+}
+
+/* Select dropdown styling */
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: var(--space-10);
+}
+
+select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237c3aed' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
 }
 
 input[type="checkbox"] {
@@ -348,7 +464,7 @@ input[type="checkbox"] {
   border-radius: var(--radius-sm);
 }
 
-/* Buttons */
+/* Buttons - Professional Discord/Slack-like styling */
 button {
   border: none;
   border-radius: var(--radius-md);
@@ -359,35 +475,91 @@ button {
   cursor: pointer;
   background: var(--btn-primary-bg);
   color: var(--text-inverse);
-  transition: background-color var(--transition-fast);
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
 }
 
 button:hover:not(:disabled) {
   background: var(--btn-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
 button:active:not(:disabled) {
   background: var(--btn-primary-active);
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2);
 }
 
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
+button:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--brand-100);
+}
+
+/* Ghost button - Secondary action */
 .ghost-button {
   background: transparent;
   color: var(--brand-600);
   border: 1px solid var(--border-light);
   margin-top: 0;
+  transition: all var(--transition-fast);
 }
 
 .ghost-button:hover:not(:disabled) {
   background: var(--brand-50);
   border-color: var(--brand-200);
+  color: var(--brand-700);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
 }
 
-/* List */
+.ghost-button:active:not(:disabled) {
+  background: var(--brand-100);
+  transform: translateY(0);
+}
+
+/* Primary button for main actions */
+.btn-primary {
+  background: var(--brand-600);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--brand-700);
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-dark);
+}
+
+/* Danger button */
+.btn-danger {
+  background: var(--error-600);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: var(--error-700);
+}
+
+/* List - Professional styling */
 .list {
   list-style: none;
   padding: 0;
@@ -405,15 +577,20 @@ button:disabled {
   border-radius: var(--radius-lg);
   background: var(--bg-primary);
   border: 1px solid var(--border-light);
-  transition: box-shadow var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .list li:hover {
   box-shadow: var(--shadow-sm);
+  border-color: var(--border-medium);
+  transform: translateY(-1px);
 }
 
 .list li.empty {
   color: var(--text-muted);
+  text-align: center;
+  padding: var(--space-6);
+  font-style: italic;
 }
 
 .list li span {
@@ -671,15 +848,36 @@ button:disabled {
   gap: var(--space-6);
 }
 
-/* Chart Card */
+/* Chart Card - Professional data visualization container */
 .chart-card {
-  min-height: 120px;
+  min-height: 200px;
   max-height: 480px;
   border-radius: var(--radius-lg);
   overflow: auto;
   background: var(--bg-primary);
   padding: var(--space-5);
   border: 1px solid var(--border-light);
+  transition: all var(--transition-normal);
+}
+
+.chart-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--brand-200);
+}
+
+/* Chart controls styling */
+.chart-controls {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.chart-controls select {
+  flex: none;
+  width: auto;
+  min-width: 120px;
+  background: var(--bg-primary);
 }
 
 .chart-controls {
