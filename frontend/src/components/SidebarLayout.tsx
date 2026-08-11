@@ -93,7 +93,7 @@ export function SidebarLayout() {
       className={collapsed ? 'app-shell app-shell-collapsed' : 'app-shell'}
       style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
     >
-      <aside className="sidebar" ref={sidebarRef} style={{ width: collapsed ? 'var(--sidebar-collapsed-width)' : sidebarWidth, position: 'relative' }}>
+      <aside className="sidebar" ref={sidebarRef} style={{ position: 'relative', width: collapsed ? 'var(--sidebar-collapsed-width)' : 'var(--sidebar-width)' }}>
         <div className="sidebar-header">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <p className="eyebrow">

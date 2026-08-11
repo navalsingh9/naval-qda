@@ -6,18 +6,16 @@ import { BarChart, PieChart, Treemap, Dendrogram, colorFor, type BarDatum, type 
 
 // Chart component types
 type ChartComponentType = 
-  | { type: 'bar'; data: BarDatum[]; title: string; description: string }
-  | { type: 'pie'; data: BarDatum[]; title: string; description: string; donut?: boolean }
-  | { type: 'treemap'; data: TreemapNode[]; title: string; description: string }
-  | { type: 'dendrogram'; tree: DendroNode | null; labels: string[]; title: string; description: string }
-  | { type: 'wordcloud'; words: {word: string; weight: number}[]; title: string; description: string }
+  | { type: 'bar'; data: BarDatum[]; title: string; description: string; source: 'coding' }
+  | { type: 'pie'; data: BarDatum[]; title: string; description: string; donut?: boolean; source: 'coding' }
+  | { type: 'treemap'; data: TreemapNode[]; title: string; description: string; source: 'hierarchy' }
+  | { type: 'dendrogram'; tree: DendroNode | null; labels: string[]; title: string; description: string; source: 'similarity' }
+  | { type: 'wordcloud'; words: {word: string; weight: number}[]; title: string; description: string; source: 'wordcloud' }
 
 type ChartInstance = {
   id: string
   componentType: ChartComponentType
   isOpen: boolean
-  xFilter?: string | null
-  yFilter?: string | null
 }
 
 // Layout presets
@@ -39,14 +37,6 @@ const LAYOUT_PRESETS: LayoutPreset[] = [
   { id: '4x1', name: 'Four Vertical', rows: 4, cols: 1, chartPositions: [{ row: 0, col: 0 }, { row: 1, col: 0 }, { row: 2, col: 0 }, { row: 3, col: 0 }] },
 ]
 
-// Available chart templates
-type ChartTemplate = {
-  id: string
-  name: string
-  description: string
-  create: (data: any) => ChartComponentType
-}
-
 export function VisualizationDashboard() {
   const { selectedProjectId } = useProjectStore()
   const { sources, loadSources } = useSourceStore()
@@ -54,15 +44,12 @@ export function VisualizationDashboard() {
   
   // Layout state
   const [selectedLayout, setSelectedLayout] = useState<string>('2x2')
-  const [customRows, setCustomRows] = useState<number>(2)
-  const [customCols, setCustomCols] = useState<number>(2)
   
   // Chart instances state
   const [charts, setCharts] = useState<ChartInstance[]>([])
   
   // Filter state
   const [globalFilter, setGlobalFilter] = useState<string | null>(null)
-  const [filterSource, setFilterSource] = useState<string | null>(null)
   
   // Data loading states
   const [loading, setLoading] = useState<Record<string, boolean>>({})
@@ -76,6 +63,7 @@ export function VisualizationDashboard() {
     if (selectedProjectId) {
       loadTree(selectedProjectId)
       loadSources(selectedProjectId)
+      loadDefaultCharts()
     }
   }, [selectedProjectId, loadTree, loadSources])
 
@@ -86,22 +74,165 @@ export function VisualizationDashboard() {
 
   // Get layout preset
   const getLayoutPreset = useCallback((id: string): LayoutPreset => {
-    return LAYOUT_PRESETS.find(p => p.id === id) || LAYOUT_PRESETS[3] // Default to 2x2
+    return LAYOUT_PRESETS.find(p => p.id === id) || LAYOUT_PRESETS[3]
   }, [])
 
   // Get current layout
   const currentLayout = getLayoutPreset(selectedLayout)
 
+  // Reload all chart data
+  const refreshAllData = useCallback(() => {
+    charts.forEach(chart => {
+      loadChartData(chart)
+    })
+  }, [charts])
+
+  // Load default charts (2x2 grid with 4 charts)
+  const loadDefaultCharts = useCallback(() => {
+    if (!selectedProjectId) return
+    
+    setLoading(prev => ({ ...prev, init: true }))
+    
+    const newCharts: ChartInstance[] = [
+      {
+        id: generateChartId(),
+        componentType: {
+          type: 'bar',
+          data: [],
+          title: 'Coding References',
+          description: 'References per node',
+          source: 'coding'
+        },
+        isOpen: true
+      },
+      {
+        id: generateChartId(),
+        componentType: {
+          type: 'pie',
+          data: [],
+          title: 'Code Distribution',
+          description: 'Distribution by sources',
+          donut: true,
+          source: 'coding'
+        },
+        isOpen: true
+      },
+      {
+        id: generateChartId(),
+        componentType: {
+          type: 'wordcloud',
+          words: [],
+          title: 'Word Cloud',
+          description: 'Most frequent words in sources',
+          source: 'wordcloud'
+        },
+        isOpen: true
+      },
+      {
+        id: generateChartId(),
+        componentType: {
+          type: 'treemap',
+          data: [],
+          title: 'Hierarchy Treemap',
+          description: 'Node hierarchy visualization',
+          source: 'hierarchy'
+        },
+        isOpen: true
+      }
+    ]
+    setCharts(newCharts)
+    
+    // Load data for each chart
+    newCharts.forEach(chart => {
+      loadChartData(chart)
+    })
+    
+    setLoading(prev => ({ ...prev, init: false }))
+  }, [selectedProjectId, generateChartId])
+
+  // Load chart data from API
+  const loadChartData = useCallback(async (chart: ChartInstance) => {
+    if (!selectedProjectId) return
+    
+    setLoading(prev => ({ ...prev, [chart.id]: true }))
+    setErrors(prev => ({ ...prev, [chart.id]: '' }))
+    
+    try {
+      const { componentType } = chart
+      
+      if (componentType.source === 'coding') {
+        const data = await window.api.visualize.codingByNodeChart({ projectId: selectedProjectId }) as Array<{
+          nodeId: number; name: string; path: string; references: number; sources: number
+        }>
+        
+        if (componentType.type === 'bar') {
+          const barData: BarDatum[] = data
+            .map((row, i) => ({ 
+              label: row.path || row.name, 
+              value: row.references,
+              color: colorFor(i) 
+            }))
+            .filter((row) => row.value > 0)
+            .sort((a, b) => b.value - a.value)
+          
+          setCharts(prev => prev.map(c => 
+            c.id === chart.id ? { ...c, componentType: { ...c.componentType, data: barData } } : c
+          ))
+        } else if (componentType.type === 'pie') {
+          const pieData: BarDatum[] = data
+            .map((row, i) => ({ 
+              label: row.path || row.name, 
+              value: row.references,
+              color: colorFor(i) 
+            }))
+            .filter((row) => row.value > 0)
+          
+          setCharts(prev => prev.map(c => 
+            c.id === chart.id ? { ...c, componentType: { ...c.componentType, data: pieData } } : c
+          ))
+        }
+      } 
+      
+      else if (componentType.source === 'hierarchy') {
+        const data = await window.api.visualize.hierarchyChartData({ projectId: selectedProjectId }) as TreemapNode[]
+        
+        setCharts(prev => prev.map(c => 
+          c.id === chart.id ? { ...c, componentType: { ...c.componentType, data } } : c
+        ))
+      }
+      
+      else if (componentType.source === 'wordcloud') {
+        const sourceIds = sources.map(s => s.id)
+        const data = await window.api.visualize.wordCloudData({
+          projectId: selectedProjectId,
+          sourceIds,
+          minLength: 4,
+          topN: 80
+        }) as { word: string; weight: number }[]
+        
+        setCharts(prev => prev.map(c => 
+          c.id === chart.id ? { ...c, componentType: { ...c.componentType, words: data } } : c
+        ))
+      }
+      
+    } catch (err) {
+      setErrors(prev => ({ ...prev, [chart.id]: err instanceof Error ? err.message : String(err) }))
+    } finally {
+      setLoading(prev => ({ ...prev, [chart.id]: false }))
+    }
+  }, [selectedProjectId, sources])
+
   // Create a new chart instance
-  const addChart = useCallback((chartType: ChartComponentType) => {
+  const addChart = useCallback(async (chartType: ChartComponentType) => {
     const newChart: ChartInstance = {
       id: generateChartId(),
       componentType: chartType,
       isOpen: true,
     }
     setCharts(prev => [...prev, newChart])
+    await loadChartData(newChart)
     return newChart.id
-  }, [generateChartId])
+  }, [generateChartId, loadChartData])
 
   // Close a chart
   const closeChart = useCallback((chartId: string) => {
@@ -111,49 +242,20 @@ export function VisualizationDashboard() {
   // Restore a closed chart
   const restoreChart = useCallback((chartId: string) => {
     setCharts(prev => prev.map(c => c.id === chartId ? { ...c, isOpen: true } : c))
-  }, [])
+    const chart = charts.find(c => c.id === chartId)
+    if (chart) {
+      loadChartData(chart)
+    }
+  }, [charts, loadChartData])
 
-  // Remove a chart completely
-  const removeChart = useCallback((chartId: string) => {
-    setCharts(prev => prev.filter(c => c.id !== chartId))
-  }, [])
-
-  // Apply filter from chart interaction
-  const applyFilter = useCallback((filterValue: string | null, source?: string) => {
+  // Apply filter
+  const applyFilter = useCallback((filterValue: string | null) => {
     setGlobalFilter(filterValue)
-    setFilterSource(source || null)
   }, [])
 
   // Clear filter
   const clearFilter = useCallback(() => {
     setGlobalFilter(null)
-    setFilterSource(null)
-  }, [])
-
-  // Export dashboard as PNG
-  const exportAsPNG = useCallback(async () => {
-    if (!dashboardRef.current) return
-    
-    try {
-      const canvas = await html2canvas(dashboardRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        logging: false,
-        useCORS: true,
-        allowTaint: true
-      })
-      
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-      const filename = `visualizations-${timestamp}.png`
-      
-      const link = document.createElement('a')
-      link.download = filename
-      link.href = canvas.toDataURL('image/png', 1.0)
-      link.click()
-    } catch (err) {
-      console.error('Export failed:', err)
-      alert('Export failed. Please try again.')
-    }
   }, [])
 
   // Export chart data as CSV
@@ -198,29 +300,89 @@ export function VisualizationDashboard() {
     }
   }, [charts])
 
-  // Load chart data
-  const loadChartData = useCallback(async (chartId: string, chartType: ChartComponentType) => {
-    if (!selectedProjectId) return
-    
-    setLoading(prev => ({ ...prev, [chartId]: true }))
-    setErrors(prev => ({ ...prev, [chartId]: '' }))
-    
-    try {
-      // For now, we'll use the existing component data structures
-      // In a full implementation, we'd fetch fresh data from the API
-    } catch (err) {
-      setErrors(prev => ({ ...prev, [chartId]: err instanceof Error ? err.message : String(err) }))
-    } finally {
-      setLoading(prev => ({ ...prev, [chartId]: false }))
+  // Chart creation functions
+  const createBarChart = useCallback(async () => {
+    await addChart({
+      type: 'bar',
+      data: [],
+      title: 'Coding References',
+      description: 'References per node',
+      source: 'coding'
+    })
+  }, [addChart])
+
+  const createPieChart = useCallback(async () => {
+    await addChart({
+      type: 'pie',
+      data: [],
+      title: 'Code Distribution',
+      description: 'Distribution of codes',
+      donut: true,
+      source: 'coding'
+    })
+  }, [addChart])
+
+  const createWordCloud = useCallback(async () => {
+    await addChart({
+      type: 'wordcloud',
+      words: [],
+      title: 'Word Cloud',
+      description: 'Most frequent words',
+      source: 'wordcloud'
+    })
+  }, [addChart])
+
+  const createTreemap = useCallback(async () => {
+    await addChart({
+      type: 'treemap',
+      data: [],
+      title: 'Hierarchy Treemap',
+      description: 'Node hierarchy visualization',
+      source: 'hierarchy'
+    })
+  }, [addChart])
+
+  const createDendrogram = useCallback(async () => {
+    await addChart({
+      type: 'dendrogram',
+      tree: null,
+      labels: [],
+      title: 'Similarity Clustering',
+      description: 'Source similarity dendrogram',
+      source: 'similarity'
+    })
+  }, [addChart])
+
+  // Get open/closed charts
+  const openCharts = useMemo(() => charts.filter(c => c.isOpen), [charts])
+  const closedCharts = useMemo(() => charts.filter(c => !c.isOpen), [charts])
+
+  // Calculate grid layout
+  const getGridStyle = useCallback((position: { row: number; col: number; spanRow?: number; spanCol?: number }) => {
+    return {
+      gridRow: `${position.row + 1} / span ${position.spanRow || 1}`,
+      gridColumn: `${position.col + 1} / span ${position.spanCol || 1}`
     }
-  }, [selectedProjectId])
+  }, [])
 
   // Render a single chart
   const renderChart = useCallback((chart: ChartInstance) => {
     if (!chart.isOpen) return null
     
-    const { componentType, xFilter, yFilter } = chart
-    const isFiltered = xFilter != null || yFilter != null
+    const { componentType } = chart
+    const isLoading = loading[chart.id]
+    const error = errors[chart.id]
+    
+    // Apply filter to data
+    let filteredData = componentType.data
+    if ((componentType.type === 'bar' || componentType.type === 'pie') && globalFilter) {
+      filteredData = componentType.data.filter(d => d.label.toLowerCase().includes(globalFilter.toLowerCase()))
+    }
+    
+    let filteredWords = componentType.words
+    if (componentType.type === 'wordcloud' && globalFilter) {
+      filteredWords = componentType.words.filter(w => w.word.toLowerCase().includes(globalFilter.toLowerCase()))
+    }
     
     const handleClose = (e: React.MouseEvent) => {
       e.stopPropagation()
@@ -236,17 +398,18 @@ export function VisualizationDashboard() {
       if (globalFilter === label) {
         clearFilter()
       } else {
-        applyFilter(label, componentType.title)
+        applyFilter(label)
       }
     }
     
-    // Filter data if filter is applied
-    let filteredData = componentType.data
-    if (componentType.type === 'bar' || componentType.type === 'pie') {
-      filteredData = globalFilter
-        ? componentType.data.filter(d => d.label.includes(globalFilter))
-        : componentType.data
-    }
+    // Check if chart has data
+    const hasData = 
+      (componentType.type === 'bar' || componentType.type === 'pie') && componentType.data.length > 0 && filteredData.length > 0
+      || componentType.type === 'wordcloud' && componentType.words.length > 0 && filteredWords.length > 0
+      || componentType.type === 'treemap' && componentType.data.length > 0
+      || componentType.type === 'dendrogram' && componentType.tree !== null
+    
+    const isEmpty = !isLoading && !hasData
     
     return (
       <div 
@@ -257,8 +420,9 @@ export function VisualizationDashboard() {
           borderRadius: 'var(--radius-lg)',
           overflow: 'hidden',
           background: 'var(--bg-primary)',
-          filter: isFiltered ? 'brightness(0.95)' : 'none',
-          boxShadow: isFiltered ? '0 0 0 2px var(--brand-500)' : 'var(--shadow-sm)'
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
         {/* Chart header */}
@@ -297,39 +461,41 @@ export function VisualizationDashboard() {
                 Filtered: {globalFilter}
               </span>
             )}
-            <button
-              type="button"
-              onClick={handleExport}
-              title="Export as CSV"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 'var(--space-1)',
-                fontSize: '1.2em',
-                color: 'var(--text-muted)',
-                borderRadius: 'var(--radius-sm)',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--brand-600)'; e.currentTarget.style.background = 'var(--bg-hover)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent' }}
-            >
-              📥
-            </button>
+            {componentType.type === 'wordcloud' && (
+              <button
+                type="button"
+                onClick={handleExport}
+                title="Export as CSV"
+                className="chart-action-btn"
+              >
+                📥
+              </button>
+            )}
+            {componentType.type === 'bar' && (
+              <button
+                type="button"
+                onClick={handleExport}
+                title="Export as CSV"
+                className="chart-action-btn"
+              >
+                📥
+              </button>
+            )}
+            {componentType.type === 'pie' && (
+              <button
+                type="button"
+                onClick={handleExport}
+                title="Export as CSV"
+                className="chart-action-btn"
+              >
+                📥
+              </button>
+            )}
             <button
               type="button"
               onClick={handleClose}
               title="Close chart"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 'var(--space-1)',
-                fontSize: '1.2em',
-                color: 'var(--text-muted)',
-                borderRadius: 'var(--radius-sm)',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--error-600)'; e.currentTarget.style.background = 'var(--error-50)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent' }}
+              className="chart-action-btn delete"
             >
               ✕
             </button>
@@ -340,34 +506,37 @@ export function VisualizationDashboard() {
         <div 
           className="chart-content"
           style={{
+            flex: 1,
             padding: 'var(--space-4)',
-            minHeight: '200px'
+            minHeight: '200px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
-          {componentType.type === 'bar' && (
+          {isLoading ? (
+            <p className="description">Loading data...</p>
+          ) : error ? (
+            <p className="error-text">{error}</p>
+          ) : isEmpty ? (
+            <p className="description">No data available. Add some coded content to see charts.</p>
+          ) : componentType.type === 'bar' ? (
             <BarChart data={filteredData} />
-          )}
-          {componentType.type === 'pie' && (
-            <PieChart 
-              data={filteredData} 
-              donut={componentType.donut}
-            />
-          )}
-          {componentType.type === 'treemap' && (
+          ) : componentType.type === 'pie' ? (
+            <PieChart data={filteredData} donut={componentType.donut} />
+          ) : componentType.type === 'treemap' ? (
             <Treemap data={componentType.data} />
-          )}
-          {componentType.type === 'dendrogram' && (
+          ) : componentType.type === 'dendrogram' ? (
             <Dendrogram tree={componentType.tree} labels={componentType.labels} />
-          )}
-          {componentType.type === 'wordcloud' && (
+          ) : componentType.type === 'wordcloud' ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', justifyContent: 'center' }}>
-              {componentType.words.map((word, index) => (
+              {filteredWords.map((word, index) => (
                 <span
                   key={word.word}
                   title={`${word.word}: ${word.weight}`}
                   onClick={() => handleFilterClick(word.word)}
                   style={{
-                    fontSize: `${14 + (word.weight / Math.max(...componentType.words.map(w => w.weight)) * 32)}px`,
+                    fontSize: `${14 + (word.weight / Math.max(...componentType.words.map(w => w.weight), 1) * 32)}px`,
                     fontWeight: 700,
                     color: colorFor(index),
                     cursor: 'pointer',
@@ -383,71 +552,11 @@ export function VisualizationDashboard() {
                 </span>
               ))}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     )
-  }, [charts, globalFilter, filterSource, closeChart, exportChartDataAsCSV, clearFilter, applyFilter])
-
-  // Get open charts
-  const openCharts = useMemo(() => charts.filter(c => c.isOpen), [charts])
-  const closedCharts = useMemo(() => charts.filter(c => !c.isOpen), [charts])
-
-  // Calculate grid layout
-  const getGridStyle = useCallback((position: { row: number; col: number; spanRow?: number; spanCol?: number }) => {
-    return {
-      gridRow: `${position.row + 1} / span ${position.spanRow || 1}`,
-      gridColumn: `${position.col + 1} / span ${position.spanCol || 1}`
-    }
-  }, [])
-
-  // Create chart from template
-  const createBarChart = useCallback(() => {
-    addChart({
-      type: 'bar',
-      data: [],
-      title: 'Coding References',
-      description: 'References per node'
-    })
-  }, [addChart])
-
-  const createPieChart = useCallback(() => {
-    addChart({
-      type: 'pie',
-      data: [],
-      title: 'Code Distribution',
-      description: 'Distribution of codes',
-      donut: true
-    })
-  }, [addChart])
-
-  const createWordCloud = useCallback(() => {
-    addChart({
-      type: 'wordcloud',
-      words: [],
-      title: 'Word Cloud',
-      description: 'Most frequent words'
-    })
-  }, [addChart])
-
-  const createTreemap = useCallback(() => {
-    addChart({
-      type: 'treemap',
-      data: [],
-      title: 'Hierarchy Treemap',
-      description: 'Node hierarchy visualization'
-    })
-  }, [addChart])
-
-  const createDendrogram = useCallback(() => {
-    addChart({
-      type: 'dendrogram',
-      tree: null,
-      labels: [],
-      title: 'Similarity Clustering',
-      description: 'Source similarity dendrogram'
-    })
-  }, [addChart])
+  }, [charts, globalFilter, loading, errors, closeChart, exportChartDataAsCSV, clearFilter, applyFilter])
 
   return (
     <section className="page-card" ref={dashboardRef}>
@@ -479,13 +588,13 @@ export function VisualizationDashboard() {
                 boxShadow: 'var(--shadow-lg)',
                 minWidth: '200px',
                 padding: 'var(--space-2)',
-                display: 'none' // Will be shown on hover/click via CSS
+                display: 'none'
               }}
             >
               <button 
                 type="button"
                 onClick={createBarChart}
-                style={{ 
+                style={{
                   width: '100%',
                   textAlign: 'left',
                   padding: 'var(--space-2) var(--space-3)',
@@ -503,7 +612,7 @@ export function VisualizationDashboard() {
               <button 
                 type="button"
                 onClick={createPieChart}
-                style={{ 
+                style={{
                   width: '100%',
                   textAlign: 'left',
                   padding: 'var(--space-2) var(--space-3)',
@@ -521,7 +630,7 @@ export function VisualizationDashboard() {
               <button 
                 type="button"
                 onClick={createWordCloud}
-                style={{ 
+                style={{
                   width: '100%',
                   textAlign: 'left',
                   padding: 'var(--space-2) var(--space-3)',
@@ -539,7 +648,7 @@ export function VisualizationDashboard() {
               <button 
                 type="button"
                 onClick={createTreemap}
-                style={{ 
+                style={{
                   width: '100%',
                   textAlign: 'left',
                   padding: 'var(--space-2) var(--space-3)',
@@ -553,24 +662,6 @@ export function VisualizationDashboard() {
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
               >
                 Treemap
-              </button>
-              <button 
-                type="button"
-                onClick={createDendrogram}
-                style={{ 
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: 'var(--space-2) var(--space-3)',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: 'var(--text-sm)'
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-              >
-                Dendrogram
               </button>
             </div>
           </div>
@@ -595,14 +686,15 @@ export function VisualizationDashboard() {
             ))}
           </select>
           
-          {/* Export button */}
+          {/* Refresh button */}
           <button
             type="button"
-            onClick={exportAsPNG}
+            onClick={refreshAllData}
             className="secondary-button"
+            title="Refresh all chart data"
             style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}
           >
-            <span>📥 Export Dashboard</span>
+            <span>🔄 Refresh</span>
           </button>
           
           {/* Clear filter button */}
@@ -620,7 +712,7 @@ export function VisualizationDashboard() {
       </div>
 
       <p className="description">
-        Build custom dashboards with draggable charts. Click on chart elements to filter all charts. 
+        Build custom dashboards with interactive charts. Click on chart elements to filter all charts. 
         Use the ➕ button to add charts and the ✕ button to close them.
       </p>
 
@@ -635,7 +727,9 @@ export function VisualizationDashboard() {
             background: 'var(--bg-secondary)',
             borderRadius: 'var(--radius-md)',
             marginBottom: 'var(--space-4)',
-            border: '1px dashed var(--border-light)'
+            border: '1px dashed var(--border-light)',
+            flexWrap: 'wrap',
+            alignItems: 'center'
           }}
         >
           <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)' }}>
@@ -699,7 +793,7 @@ export function VisualizationDashboard() {
         ))}
         
         {/* Empty slots */}
-        {openCharts.length < currentLayout.chartPositions.length && 
+        {openCharts.length < currentLayout.chartPositions.length &&
           Array.from({ length: currentLayout.chartPositions.length - openCharts.length }).map((_, i) => (
             <div
               key={`empty-${i}`}
@@ -731,7 +825,7 @@ export function VisualizationDashboard() {
         }
       </div>
 
-      {/* Chart catalog / templates */}
+      {/* Chart catalog */}
       <div style={{ marginTop: 'var(--space-6)' }}>
         <h3>Chart Templates</h3>
         <p className="description">Quick-start with pre-configured visualizations:</p>
@@ -747,9 +841,6 @@ export function VisualizationDashboard() {
           </button>
           <button type="button" onClick={createTreemap} className="secondary-button">
             Node Hierarchy
-          </button>
-          <button type="button" onClick={createDendrogram} className="secondary-button">
-            Source Clustering
           </button>
         </div>
       </div>
