@@ -114,8 +114,11 @@ export function CodingChartsPanel() {
         ) : null}
       </div>
 
-      <div className="node-ai-suggest">
-        <h4>🎯 Coding by attribute</h4>
+      {/* Coding by attribute - separate section */}
+      <div className="node-ai-suggest" style={{ marginTop: 'var(--space-6)' }}>
+        <div className="page-header">
+          <h4>🎯 Coding by attribute</h4>
+        </div>
         {!attributes.length ? (
           <p className="description">Add a case attribute (in Sources → Cases) to break coding down by it, e.g. by Role or Team size.</p>
         ) : (

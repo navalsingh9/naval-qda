@@ -69,17 +69,29 @@ export function SidebarLayout() {
                 <li key={project.id} className={project.id === selectedProjectId ? 'active' : ''}>
                   {pendingDeleteId === project.id ? (
                     <div className="project-delete-confirm">
-                      <span>Delete "{project.name}" and everything in it?</span>
+                      <span style={{ fontWeight: 'var(--font-semibold)' }}>
+                        ⚠️ Are you sure? This will permanently delete "{project.name}" and ALL its data.
+                      </span>
                       <div className="inline-form">
                         <button 
                           type="button" 
                           className="ghost-button" 
                           onClick={() => void handleConfirmDelete(project.id)}
-                          style={{ background: 'var(--error-50)', color: 'var(--error-700)' }}
+                          style={{
+                            background: 'var(--error-50)', 
+                            color: 'var(--error-700)',
+                            borderColor: 'var(--error-200)',
+                            fontWeight: 'var(--font-semibold)'
+                          }}
                         >
-                          Delete
+                          Yes, Delete Project
                         </button>
-                        <button type="button" className="ghost-button" onClick={() => setPendingDeleteId(null)}>
+                        <button 
+                          type="button" 
+                          className="ghost-button" 
+                          onClick={() => setPendingDeleteId(null)}
+                          style={{ fontWeight: 'var(--font-medium)' }}
+                        >
                           Cancel
                         </button>
                       </div>
@@ -93,20 +105,32 @@ export function SidebarLayout() {
                           display: 'flex',
                           alignItems: 'center',
                           gap: 'var(--space-2)',
-                          fontWeight: project.id === selectedProjectId ? 'var(--font-semibold)' : 'var(--font-medium)'
+                          fontWeight: project.id === selectedProjectId ? 'var(--font-semibold)' : 'var(--font-medium)',
+                          flex: 1,
+                          minWidth: 0
                         }}
                       >
                         <span style={{ fontSize: '0.9em' }}>📂</span>
-                        {project.name}
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {project.name}
+                        </span>
                       </button>
                       <button
                         type="button"
                         className="project-delete-button"
-                        title={`Delete ${project.name}`}
+                        title={`Delete ${project.name} - This cannot be undone`}
                         aria-label={`Delete ${project.name}`}
                         onClick={() => handleDeleteClick(project.id)}
+                        style={{
+                          background: 'var(--error-50)',
+                          color: 'var(--error-600)',
+                          border: '1px solid var(--error-200)',
+                          padding: 'var(--space-1) var(--space-3)',
+                          borderRadius: 'var(--radius-md)',
+                          fontSize: '1.2em'
+                        }}
                       >
-                        ✕
+                        🗑️
                       </button>
                     </div>
                   )}

@@ -33,22 +33,19 @@ export function VisualizationsPage() {
         Charts update automatically as you code and analyze your sources.
       </p>
 
-      {/* Coding Charts Section */}
-      <div className="coding-grid">
+      {/* One Chart Per Row - Full width charts */}
+      <div className="panel-grid grid-cols-1">
         <CodingChartsPanel />
       </div>
 
-      {/* Two Column Layout for Word Cloud and Hierarchy */}
-      <div className="panel-grid">
-        <div className="w-full">
-          <WordCloud />
-        </div>
-        <div className="w-full">
-          <HierarchyTreemap />
-        </div>
+      <div className="panel-grid grid-cols-1">
+        <WordCloud />
       </div>
 
-      {/* Full width for Similarity Clustering */}
+      <div className="panel-grid grid-cols-1">
+        <HierarchyTreemap />
+      </div>
+
       <div className="panel-grid grid-cols-1">
         <SimilarityClusterPanel />
       </div>
