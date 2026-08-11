@@ -413,10 +413,12 @@ export function VisualizationDashboard() {
     }
     
     // Check if chart has data
+    const hasCodings = componentType.type === 'treemap' && componentType.data.some((node: TreemapNode) => node.value > 0 || (node.children?.length ?? 0) > 0)
+    
     const hasData = 
       (componentType.type === 'bar' || componentType.type === 'pie') && componentType.data.length > 0 && filteredData.length > 0
       || componentType.type === 'wordcloud' && componentType.words.length > 0 && filteredWords.length > 0
-      || componentType.type === 'treemap' && componentType.data.length > 0
+      || componentType.type === 'treemap' && componentType.data.length > 0 && hasCodings
       || componentType.type === 'dendrogram' && componentType.tree !== null
     
     const isEmpty = !isLoading && !hasData
@@ -529,7 +531,11 @@ export function VisualizationDashboard() {
           ) : error ? (
             <p className="error-text">{error}</p>
           ) : isEmpty ? (
-            <p className="description">No data available. Add some coded content to see charts.</p>
+            <p className="description">
+              {componentType.type === 'treemap' 
+                ? 'No hierarchy data. Add nodes and code some text first.'
+                : 'No data available. Add some coded content to see charts.'}
+            </p>
           ) : componentType.type === 'bar' || componentType.type === 'pie' ? (
             <>
               <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
@@ -576,7 +582,9 @@ export function VisualizationDashboard() {
               )}
             </>
           ) : componentType.type === 'treemap' ? (
-            <Treemap data={componentType.data} onClick={handleFilterClick} />
+            <div style={{ minHeight: '400px', background: 'var(--bg-secondary)', width: '100%' }}>
+              <Treemap data={componentType.data} width={600} height={400} onClick={handleFilterClick} />
+            </div>
           ) : componentType.type === 'dendrogram' ? (
             <Dendrogram tree={componentType.tree} labels={componentType.labels} />
           ) : componentType.type === 'wordcloud' ? (
