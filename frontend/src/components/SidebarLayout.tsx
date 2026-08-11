@@ -43,7 +43,9 @@ export function SidebarLayout() {
     e.preventDefault()
     setIsDragging(true)
     setDragStartX(e.clientX)
-    setDragStartWidth(sidebarWidth)
+    // If collapsed, start from the collapsed width (64px), otherwise use current sidebarWidth
+    const startWidth = collapsed ? 64 : sidebarWidth
+    setDragStartWidth(startWidth)
   }
 
   const handleMouseMove = (e: MouseEvent) => {
@@ -52,6 +54,9 @@ export function SidebarLayout() {
     const newWidth = dragStartWidth + delta
     if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
       setSidebarWidth(newWidth)
+      if (collapsed) {
+        setCollapsed(false)
+      }
     }
   }
 
@@ -252,13 +257,11 @@ export function SidebarLayout() {
         >
           v{import.meta.env.VITE_APP_VERSION || '0.4.8'}
         </div>
-        {!collapsed && (
-          <div 
-            className="sidebar-resize-handle"
-            ref={dragHandleRef}
-            onMouseDown={handleMouseDown}
-          />
-        )}
+        <div 
+          className="sidebar-resize-handle"
+          ref={dragHandleRef}
+          onMouseDown={handleMouseDown}
+        />
       </aside>
 
       <main className="content-panel">

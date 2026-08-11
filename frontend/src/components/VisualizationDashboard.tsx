@@ -16,6 +16,8 @@ type ChartInstance = {
   id: string
   componentType: ChartComponentType
   isOpen: boolean
+  // For charts that support multiple views (bar/pie/table)
+  chartKind?: 'bar' | 'pie' | 'table'
 }
 
 // Layout presets
@@ -103,7 +105,8 @@ export function VisualizationDashboard() {
           description: 'References per node',
           source: 'coding'
         },
-        isOpen: true
+        isOpen: true,
+        chartKind: 'bar'
       },
       {
         id: generateChartId(),
@@ -115,7 +118,8 @@ export function VisualizationDashboard() {
           donut: true,
           source: 'coding'
         },
-        isOpen: true
+        isOpen: true,
+        chartKind: 'pie'
       },
       {
         id: generateChartId(),
@@ -223,11 +227,12 @@ export function VisualizationDashboard() {
   }, [selectedProjectId, sources])
 
   // Create a new chart instance
-  const addChart = useCallback(async (chartType: ChartComponentType) => {
+  const addChart = useCallback(async (chartType: ChartComponentType, chartKind?: 'bar' | 'pie' | 'table') => {
     const newChart: ChartInstance = {
       id: generateChartId(),
       componentType: chartType,
       isOpen: true,
+      chartKind
     }
     setCharts(prev => [...prev, newChart])
     await loadChartData(newChart)
@@ -247,6 +252,11 @@ export function VisualizationDashboard() {
       loadChartData(chart)
     }
   }, [charts, loadChartData])
+
+  // Change chart kind (bar/pie/table)
+  const changeChartKind = useCallback((chartId: string, newKind: 'bar' | 'pie' | 'table') => {
+    setCharts(prev => prev.map(c => c.id === chartId ? { ...c, chartKind: newKind } : c))
+  }, [])
 
   // Apply filter
   const applyFilter = useCallback((filterValue: string | null) => {
@@ -308,7 +318,7 @@ export function VisualizationDashboard() {
       title: 'Coding References',
       description: 'References per node',
       source: 'coding'
-    })
+    }, 'bar')
   }, [addChart])
 
   const createPieChart = useCallback(async () => {
@@ -319,7 +329,7 @@ export function VisualizationDashboard() {
       description: 'Distribution of codes',
       donut: true,
       source: 'coding'
-    })
+    }, 'pie')
   }, [addChart])
 
   const createWordCloud = useCallback(async () => {
@@ -520,12 +530,53 @@ export function VisualizationDashboard() {
             <p className="error-text">{error}</p>
           ) : isEmpty ? (
             <p className="description">No data available. Add some coded content to see charts.</p>
-          ) : componentType.type === 'bar' ? (
-            <BarChart data={filteredData} />
-          ) : componentType.type === 'pie' ? (
-            <PieChart data={filteredData} donut={componentType.donut} />
+          ) : componentType.type === 'bar' || componentType.type === 'pie' ? (
+            <>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
+                <select 
+                  value={chart.chartKind || componentType.type}
+                  onChange={(e) => changeChartKind(chart.id, e.target.value as 'bar' | 'pie' | 'table')}
+                  style={{
+                    padding: 'var(--space-1) var(--space-2)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-primary)',
+                    fontSize: 'var(--text-xs)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="bar">Bar Chart</option>
+                  <option value="pie">Pie Chart</option>
+                  <option value="table">Table</option>
+                </select>
+              </div>
+              {chart.chartKind === 'table' ? (
+                <div className="sheet-table-wrap">
+                  <table className="sheet-table">
+                    <thead>
+                      <tr>
+                        <th>Node</th>
+                        <th>References</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredData.map((d) => (
+                        <tr key={d.label} onClick={() => handleFilterClick(d.label)} style={{ cursor: 'pointer' }}>
+                          <td>{d.label}</td>
+                          <td>{d.value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : chart.chartKind === 'pie' || componentType.type === 'pie' ? (
+                <PieChart data={filteredData} donut={componentType.type === 'pie' ? componentType.donut : true} onClick={handleFilterClick} />
+              ) : (
+                <BarChart data={filteredData} onClick={handleFilterClick} />
+              )}
+            </>
           ) : componentType.type === 'treemap' ? (
-            <Treemap data={componentType.data} />
+            <Treemap data={componentType.data} onClick={handleFilterClick} />
           ) : componentType.type === 'dendrogram' ? (
             <Dendrogram tree={componentType.tree} labels={componentType.labels} />
           ) : componentType.type === 'wordcloud' ? (
