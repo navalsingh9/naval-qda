@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useProjectStore } from '../stores/useProjectStore'
 
@@ -16,6 +16,68 @@ export function SidebarLayout() {
   const { projects, selectedProjectId, selectProject, deleteProject } = useProjectStore()
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
   const [collapsed, setCollapsed] = useState(false)
+  const [sidebarWidth, setSidebarWidth] = useState<number>(280)
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStartX, setDragStartX] = useState<number>(0)
+  const [dragStartWidth, setDragStartWidth] = useState<number>(0)
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const dragHandleRef = useRef<HTMLDivElement>(null)
+  
+  const MIN_WIDTH = 200
+  const MAX_WIDTH = 400
+
+  useEffect(() => {
+    const savedWidth = localStorage.getItem('sidebar-width')
+    if (savedWidth) {
+      setSidebarWidth(Number(savedWidth))
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isDragging) {
+      localStorage.setItem('sidebar-width', sidebarWidth.toString())
+    }
+  }, [sidebarWidth, isDragging])
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+    setDragStartX(e.clientX)
+    setDragStartWidth(sidebarWidth)
+  }
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return
+    const delta = e.clientX - dragStartX
+    const newWidth = dragStartWidth + delta
+    if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
+      setSidebarWidth(newWidth)
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsDragging(false)
+  }
+
+  useEffect(() => {
+    if (isDragging) {
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+    } else {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+    return () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging, dragStartX, dragStartWidth])
 
   const handleDeleteClick = (projectId: number) => {
     setPendingDeleteId(projectId)
@@ -27,8 +89,11 @@ export function SidebarLayout() {
   }
 
   return (
-    <div className={collapsed ? 'app-shell app-shell-collapsed' : 'app-shell'}>
-      <aside className="sidebar">
+    <div 
+      className={collapsed ? 'app-shell app-shell-collapsed' : 'app-shell'}
+      style={{ '--sidebar-width': `${sidebarWidth}px` } as React.CSSProperties}
+    >
+      <aside className="sidebar" ref={sidebarRef} style={{ width: collapsed ? 'var(--sidebar-collapsed-width)' : sidebarWidth, position: 'relative' }}>
         <div className="sidebar-header">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <p className="eyebrow">
@@ -55,6 +120,15 @@ export function SidebarLayout() {
           </div>
           <h1>Workspace</h1>
         </div>
+        <button
+          type="button"
+          className="sidebar-toggle"
+          onClick={() => setCollapsed(false)}
+          aria-label="Expand sidebar"
+          title="Expand sidebar"
+        >
+          ☰
+        </button>
 
         <div className="sidebar-section">
           <h2>Projects</h2>
@@ -178,18 +252,16 @@ export function SidebarLayout() {
         >
           v{import.meta.env.VITE_APP_VERSION || '0.4.8'}
         </div>
+        {!collapsed && (
+          <div 
+            className="sidebar-resize-handle"
+            ref={dragHandleRef}
+            onMouseDown={handleMouseDown}
+          />
+        )}
       </aside>
 
       <main className="content-panel">
-        <button
-          type="button"
-          className="sidebar-toggle"
-          onClick={() => setCollapsed(false)}
-          aria-label="Expand sidebar"
-          title="Expand sidebar"
-        >
-          ☰
-        </button>
         <Outlet />
       </main>
     </div>
