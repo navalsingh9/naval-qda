@@ -181,6 +181,15 @@ export function SidebarLayout() {
       </aside>
 
       <main className="content-panel">
+        <button
+          type="button"
+          className="sidebar-toggle"
+          onClick={() => setCollapsed(false)}
+          aria-label="Expand sidebar"
+          title="Expand sidebar"
+        >
+          ☰
+        </button>
         <Outlet />
       </main>
     </div>
