@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useProjectStore } from '../stores/useProjectStore'
 import { useSourceStore } from '../stores/useSourceStore'
 import { useNodeStore } from '../stores/useNodeStore'
-import { BarChart, PieChart, Treemap, Dendrogram, colorFor, type BarDatum, type TreemapNode, type DendroNode } from './charts/Charts'
+import { BarChart, PieChart, Treemap, Dendrogram, colorFor, CHART_COLORS, type BarDatum, type TreemapNode, type DendroNode } from './charts/Charts'
 
 // Chart component types
 type ChartComponentType = 
@@ -412,13 +412,32 @@ export function VisualizationDashboard() {
       }
     }
     
+    // Apply filter to treemap data
+    let filteredTreemapData = componentType.data
+    if (componentType.type === 'treemap' && globalFilter) {
+      const filterLower = globalFilter.toLowerCase()
+      const filterNode = (node: TreemapNode): TreemapNode | null => {
+        if (node.name.toLowerCase().includes(filterLower)) {
+          return { ...node }
+        }
+        if (node.children?.length) {
+          const filteredChildren = node.children.map(filterNode).filter(Boolean) as TreemapNode[]
+          if (filteredChildren.length > 0) {
+            return { ...node, children: filteredChildren }
+          }
+        }
+        return null
+      }
+      filteredTreemapData = componentType.data.map(filterNode).filter(Boolean) as TreemapNode[]
+    }
+    
     // Check if chart has data
-    const hasCodings = componentType.type === 'treemap' && componentType.data.some((node: TreemapNode) => node.value > 0 || (node.children?.length ?? 0) > 0)
+    const hasCodings = filteredTreemapData.some((node: TreemapNode) => node.value > 0 || (node.children?.length ?? 0) > 0)
     
     const hasData = 
       (componentType.type === 'bar' || componentType.type === 'pie') && componentType.data.length > 0 && filteredData.length > 0
       || componentType.type === 'wordcloud' && componentType.words.length > 0 && filteredWords.length > 0
-      || componentType.type === 'treemap' && componentType.data.length > 0 && hasCodings
+      || componentType.type === 'treemap' && filteredTreemapData.length > 0 && hasCodings
       || componentType.type === 'dendrogram' && componentType.tree !== null
     
     const isEmpty = !isLoading && !hasData
@@ -576,19 +595,19 @@ export function VisualizationDashboard() {
                   </table>
                 </div>
               ) : chart.chartKind === 'pie' || componentType.type === 'pie' ? (
-                <PieChart data={filteredData} donut={componentType.type === 'pie' ? componentType.donut : true} onClick={handleFilterClick} />
+                <PieChart data={filteredData} donut={componentType.type === 'pie' ? componentType.donut : true} onClick={handleFilterClick} colors={CHART_COLORS} />
               ) : (
-                <BarChart data={filteredData} onClick={handleFilterClick} />
+                <BarChart data={filteredData} onClick={handleFilterClick} colors={CHART_COLORS} />
               )}
             </>
           ) : componentType.type === 'treemap' ? (
-            <div style={{ minHeight: '400px', background: 'var(--bg-secondary)', width: '100%' }}>
-              <Treemap data={componentType.data} width={600} height={400} onClick={handleFilterClick} />
+            <div style={{ minHeight: '400px', background: 'var(--bg-secondary)', width: '100%', height: '100%' }}>
+              <Treemap data={filteredTreemapData} width="100%" height="100%" onClick={handleFilterClick} colors={CHART_COLORS} />
             </div>
           ) : componentType.type === 'dendrogram' ? (
-            <Dendrogram tree={componentType.tree} labels={componentType.labels} />
+            <Dendrogram tree={componentType.tree} labels={componentType.labels} width="100%" colors={CHART_COLORS} />
           ) : componentType.type === 'wordcloud' ? (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', justifyContent: 'center', minHeight: '200px' }}>
               {filteredWords.map((word, index) => (
                 <span
                   key={word.word}
@@ -597,7 +616,7 @@ export function VisualizationDashboard() {
                   style={{
                     fontSize: `${14 + (word.weight / Math.max(...componentType.words.map(w => w.weight), 1) * 32)}px`,
                     fontWeight: 700,
-                    color: colorFor(index),
+                    color: CHART_COLORS[index % CHART_COLORS.length],
                     cursor: 'pointer',
                     padding: 'var(--space-1) var(--space-2)',
                     borderRadius: 'var(--radius-sm)',

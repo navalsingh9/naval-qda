@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useProjectStore } from '../stores/useProjectStore'
 import { useSourceStore } from '../stores/useSourceStore'
 import { useNodeStore, type NodeTreeItem } from '../stores/useNodeStore'
-import { Dendrogram, type DendroNode } from './charts/Charts'
+import { Dendrogram, type DendroNode, CHART_COLORS } from './charts/Charts'
 
 type ClusterResult = {
   clusters: Array<{ id: number; children: unknown[] }>
@@ -113,8 +113,8 @@ export function SimilarityClusterPanel() {
       {result?.linkage?.length ? (
         <div className="sheet-table-wrap" style={{ background: 'var(--bg-primary)', borderRadius: 'var(--radius-lg)' }}>
           {displayTree ? (
-            <div className="chart-card" style={{ marginBottom: 'var(--space-4)', background: 'var(--bg-secondary)' }}>
-              <Dendrogram tree={displayTree} />
+            <div className="chart-card" style={{ marginBottom: 'var(--space-4)', background: 'var(--bg-secondary)', width: '100%' }}>
+              <Dendrogram tree={displayTree} width="100%" colors={CHART_COLORS} />
             </div>
           ) : null}
           <table className="sheet-table">

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useProjectStore } from '../stores/useProjectStore'
-import { Treemap, type TreemapNode } from './charts/Charts'
+import { Treemap, type TreemapNode, CHART_COLORS } from './charts/Charts'
 
 export function HierarchyTreemap() {
   const { selectedProjectId } = useProjectStore()
@@ -37,9 +37,9 @@ export function HierarchyTreemap() {
       <p className="description">Box area is proportional to coding references — nested boxes show child nodes within their parent.</p>
       {loading ? <p className="description">Loading…</p> : null}
       {error ? <p className="error-text">{error}</p> : null}
-      <div className="chart-card" style={{ minHeight: '400px', background: 'var(--bg-secondary)' }}>
+      <div className="chart-card" style={{ minHeight: '400px', background: 'var(--bg-secondary)', width: '100%', height: '400px' }}>
         {data.length && hasCodings ? (
-          <Treemap data={data} />
+          <Treemap data={data} width="100%" height="100%" colors={CHART_COLORS} />
         ) : !loading ? (
           <p className="description">No hierarchy data yet — add nodes and code some text first.</p>
         ) : null}

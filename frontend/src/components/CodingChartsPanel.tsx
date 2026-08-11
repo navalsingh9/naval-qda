@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useProjectStore } from '../stores/useProjectStore'
-import { BarChart, PieChart, colorFor, type BarDatum } from './charts/Charts'
+import { BarChart, PieChart, colorFor, CHART_COLORS, type BarDatum } from './charts/Charts'
 
 type NodeChartRow = { nodeId: number; name: string; path: string; references: number; sources: number }
 type AttributeChartData = { attributeName: string; rowLabels: string[]; columnLabels: string[]; cells: number[][] }
@@ -108,7 +108,7 @@ export function CodingChartsPanel() {
       {error ? <p className="error-text">{error}</p> : null}
       <div className="chart-card" style={{ minHeight: '300px', background: 'var(--bg-secondary)' }}>
         {barData.length ? (
-          chartKind === 'bar' ? <BarChart data={barData} /> : <PieChart data={barData} donut={true} />
+          chartKind === 'bar' ? <BarChart data={barData} colors={CHART_COLORS} /> : <PieChart data={barData} donut={true} colors={CHART_COLORS} />
         ) : !loading ? (
           <p className="description">No coded text yet — code some sources to see coding charts.</p>
         ) : null}
@@ -137,7 +137,7 @@ export function CodingChartsPanel() {
             {attributeError ? <p className="error-text">{attributeError}</p> : null}
             {attributeTotals.length ? (
               <div className="chart-card">
-                <PieChart data={attributeTotals} donut={false} />
+                <PieChart data={attributeTotals} donut={false} colors={CHART_COLORS} />
               </div>
             ) : !attributeLoading ? (
               <p className="description">No coded sources have a case with this attribute set yet.</p>
