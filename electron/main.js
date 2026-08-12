@@ -13,6 +13,8 @@ const {
   listAttributes,
   setCaseAttributeValue,
   linkSourceToCase,
+  setSourceCase,
+  getSourceCaseLinks,
   getClassificationSheet,
 } = require('../backend/memos');
 const { createCoder, listCoders, getOrCreatePrimaryCoder } = require('../backend/coders');
@@ -141,6 +143,8 @@ ipcMain.handle('attributes:create', (_event, payload) => createAttribute(payload
 ipcMain.handle('attributes:list', (_event, projectId) => listAttributes(projectId));
 ipcMain.handle('cases:setAttributeValue', (_event, payload) => setCaseAttributeValue(payload));
 ipcMain.handle('cases:linkSource', (_event, sourceId, caseId) => linkSourceToCase(sourceId, caseId));
+ipcMain.handle('cases:setSourceCase', (_event, sourceId, caseId) => setSourceCase(sourceId, caseId));
+ipcMain.handle('cases:getSourceCaseLinks', (_event, projectId) => getSourceCaseLinks(projectId));
 ipcMain.handle('cases:getClassificationSheet', (_event, projectId) => getClassificationSheet(projectId));
 
 ipcMain.handle('coders:create', (_event, payload) => createCoder(payload));

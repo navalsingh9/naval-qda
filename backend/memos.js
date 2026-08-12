@@ -188,6 +188,55 @@ function linkSourceToCase(sourceId, caseId) {
   return { sourceId, caseId, linked: true };
 }
 
+// The "link to case" UI treats each source as belonging to a single case
+// at a time (that's the whole mental model of a case in QDA — one
+// interviewee, one site, etc. — even though the underlying table can
+// technically hold many links). This gives it "set" semantics: clears any
+// existing link(s) for the source and applies the new one atomically, so
+// re-linking to a different case actually replaces rather than adds.
+function setSourceCase(sourceId, caseId) {
+  const db = getDatabase();
+  const source = db.prepare('SELECT id, project_id FROM sources WHERE id = ?').get(sourceId);
+  if (!source) {
+    throw new Error('Source not found.');
+  }
+  if (caseId !== null) {
+    const caseRow = db.prepare('SELECT id, project_id FROM cases WHERE id = ?').get(caseId);
+    if (!caseRow) {
+      throw new Error('Case not found.');
+    }
+    if (caseRow.project_id !== source.project_id) {
+      throw new Error('Source and case do not belong to the same project.');
+    }
+  }
+
+  const applyLink = db.transaction(() => {
+    db.prepare('DELETE FROM source_case_links WHERE source_id = ?').run(sourceId);
+    if (caseId !== null) {
+      db.prepare('INSERT INTO source_case_links (source_id, case_id) VALUES (?, ?)').run(sourceId, caseId);
+    }
+  });
+  applyLink();
+
+  return { sourceId, caseId };
+}
+
+// The "Link to case" dropdown previously always displayed as unselected
+// regardless of the source's actual link — there was no way to fetch the
+// current state at all, so the UI couldn't reflect (or the researcher
+// confirm) which case a source was already linked to.
+function getSourceCaseLinks(projectId) {
+  const db = getDatabase();
+  const rows = db.prepare(`
+    SELECT scl.source_id, scl.case_id
+    FROM source_case_links scl
+    JOIN sources s ON s.id = scl.source_id
+    WHERE s.project_id = ?
+  `).all(projectId);
+
+  return rows.map((row) => ({ sourceId: row.source_id, caseId: row.case_id }));
+}
+
 function getClassificationSheet(projectId) {
   const db = getDatabase();
   const cases = db.prepare('SELECT id, name, description FROM cases WHERE project_id = ? ORDER BY id ASC').all(projectId);
@@ -232,5 +281,7 @@ module.exports = {
   listAttributes,
   setCaseAttributeValue,
   linkSourceToCase,
+  setSourceCase,
+  getSourceCaseLinks,
   getClassificationSheet,
 };

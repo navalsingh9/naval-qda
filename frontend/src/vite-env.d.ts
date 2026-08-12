@@ -35,6 +35,8 @@ declare global {
         listAttributes: (projectId: number) => Promise<Array<{ id: number; projectId: number; name: string; valueType: string }>>
         setAttributeValue: (payload: unknown) => Promise<unknown>
         linkSource: (sourceId: number, caseId: number) => Promise<unknown>
+        setSourceCase: (sourceId: number, caseId: number | null) => Promise<unknown>
+        getSourceCaseLinks: (projectId: number) => Promise<Array<{ sourceId: number; caseId: number }>>
         getClassificationSheet: (projectId: number) => Promise<unknown>
       }
       coders: {

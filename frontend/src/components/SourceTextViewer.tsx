@@ -98,18 +98,35 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
   }, [selectedProjectId])
 
   useEffect(() => {
-    if (!source?.content) return
+    // This used to be guarded by `if (!source?.content) return`, but
+    // `source` wasn't in the dependency array — `source` starts null and
+    // loads asynchronously, so on first mount (or right after switching
+    // sourceId) this effect frequently ran BEFORE `source` had loaded,
+    // silently skipped the fetch, and then never retried since sourceId
+    // itself hadn't changed again. That's what made a freshly (re)opened
+    // document show no highlights until something else nudged a refetch.
+    //
+    // It also had no protection against out-of-order responses: switching
+    // documents quickly (P6 -> P5 -> P6) could let the P5 fetch resolve
+    // AFTER the second P6 fetch and overwrite it with stale P5 codings.
+    // `cancelled` guards against exactly that.
+    let cancelled = false
 
     const loadCodings = async () => {
       try {
         const data = await window.api.coding.getCodingsForSource(sourceId, {})
-        setCodings((data as CodingRecord[]) ?? [])
+        if (!cancelled) setCodings((data as CodingRecord[]) ?? [])
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
+        if (!cancelled) setError(err instanceof Error ? err.message : String(err))
       }
     }
 
+    setCodings([])
     void loadCodings()
+
+    return () => {
+      cancelled = true
+    }
   }, [sourceId])
 
   const refreshCodings = async () => {

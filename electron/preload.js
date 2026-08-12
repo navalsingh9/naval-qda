@@ -41,6 +41,8 @@ contextBridge.exposeInMainWorld('api', {
     listAttributes: (projectId) => ipcRenderer.invoke('attributes:list', projectId),
     setAttributeValue: (payload) => ipcRenderer.invoke('cases:setAttributeValue', payload),
     linkSource: (sourceId, caseId) => ipcRenderer.invoke('cases:linkSource', sourceId, caseId),
+    setSourceCase: (sourceId, caseId) => ipcRenderer.invoke('cases:setSourceCase', sourceId, caseId),
+    getSourceCaseLinks: (projectId) => ipcRenderer.invoke('cases:getSourceCaseLinks', projectId),
     getClassificationSheet: (projectId) => ipcRenderer.invoke('cases:getClassificationSheet', projectId),
   },
   coders: {

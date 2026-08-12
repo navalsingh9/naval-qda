@@ -96,7 +96,7 @@ export function CodingReportPanel() {
           {report ? (
             <div className="sheet-table-wrap">
               <p className="description">
-                {report.codings.length} coded excerpt{report.codings.length === 1 ? '' : 's'} under &quot;{report.nodeName}&quot;.
+                {report.codings.length} coded excerpt{report.codings.length === 1 ? '' : 's'} under &quot;{report.nodeName}&quot; (including any child nodes).
               </p>
               <table className="sheet-table">
                 <thead>

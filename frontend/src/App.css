@@ -2194,3 +2194,27 @@ textarea:valid {
   overflow-x: auto;
   color: var(--text-primary);
 }
+
+/* Imported sources table — replaces the old card-per-source layout that
+   showed the title and filename twice (title defaults to the filename on
+   import) and had no reliable way to see which case a source was linked
+   to (the picker always rendered as unselected regardless of state). */
+.source-table-title {
+  font-weight: var(--font-semibold);
+  white-space: nowrap;
+}
+
+.source-table-path {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-table td .source-list-link {
+  width: auto;
+  min-width: 180px;
+}

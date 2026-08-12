@@ -11,7 +11,7 @@ type Tab = 'sources' | 'cases' | 'framework'
 export function ProjectSourcePage() {
   const { selectedProjectId, createProject, loadProjects, error: projectError, clearError: clearProjectError } = useProjectStore()
   const { sources, loading, error: sourceError, loadSources, importSources, clearError: clearSourceError } = useSourceStore()
-  const { cases, loadCases, linkSource } = useCaseStore()
+  const { cases, sourceCaseLinks, loadCases, loadSourceCaseLinks, setSourceCase } = useCaseStore()
   const [projectName, setProjectName] = useState('')
   const [isDraggingOver, setIsDraggingOver] = useState(false)
   const [refreshToken, setRefreshToken] = useState(0)
@@ -31,8 +31,9 @@ export function ProjectSourcePage() {
   useEffect(() => {
     if (selectedProjectId) {
       void loadCases(selectedProjectId)
+      void loadSourceCaseLinks(selectedProjectId)
     }
-  }, [selectedProjectId, loadCases])
+  }, [selectedProjectId, loadCases, loadSourceCaseLinks])
 
   const handleCreateProject = async () => {
     if (!projectName.trim()) return
@@ -68,6 +69,12 @@ export function ProjectSourcePage() {
     const files = event.dataTransfer.files
     if (!files || files.length === 0 || !selectedProjectId) return
     await importSources(selectedProjectId, files)
+  }
+
+  const handleCaseChange = async (sourceId: number, value: string) => {
+    const caseId = value === '' ? null : Number(value)
+    await setSourceCase(sourceId, caseId)
+    setRefreshToken((t) => t + 1)
   }
 
   return (
@@ -120,37 +127,43 @@ export function ProjectSourcePage() {
         >
           {sourceError ? <p className="error-text">{sourceError}</p> : null}
           {sourceError ? <button type="button" className="ghost-button" onClick={() => clearSourceError()}>Dismiss</button> : null}
-          <ul className="list source-list">
-            {sources.map((source) => (
-              <li key={source.id} className="source-list-row">
-                <div className="source-list-info">
-                  <strong>{source.title}</strong>
-                  <span className="source-path" title={source.file_path}>{source.file_path.split(/[\\/]/).pop()}</span>
-                </div>
-                <select
-                  className="source-list-link"
-                  value=""
-                  onChange={(event) => {
-                    const caseId = Number(event.target.value)
-                    if (caseId) {
-                      void linkSource(source.id, caseId)
-                      setRefreshToken((t) => t + 1)
-                    }
-                  }}
-                >
-                  <option value="">Link to case…</option>
-                  {cases.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
+          {sources.length ? (
+            <div className="sheet-table-wrap">
+              <table className="sheet-table source-table">
+                <thead>
+                  <tr>
+                    <th>Source</th>
+                    <th>File path</th>
+                    <th>Case</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sources.map((source) => (
+                    <tr key={source.id}>
+                      <td className="source-table-title">{source.title}</td>
+                      <td className="source-table-path" title={source.file_path}>{source.file_path}</td>
+                      <td>
+                        <select
+                          className="source-list-link"
+                          value={sourceCaseLinks[source.id] ?? ''}
+                          onChange={(event) => void handleCaseChange(source.id, event.target.value)}
+                        >
+                          <option value="">Not linked</option>
+                          {cases.map((c) => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
                   ))}
-                </select>
-              </li>
-            ))}
-            {!sources.length && !loading ? (
-              <li className="empty">
-                {selectedProjectId ? 'No sources imported yet. Drag files here, or use Import source.' : 'Select a project first.'}
-              </li>
-            ) : null}
-          </ul>
+                </tbody>
+              </table>
+            </div>
+          ) : !loading ? (
+            <p className="description" style={{ textAlign: 'left' }}>
+              {selectedProjectId ? 'No sources imported yet. Drag files here, or use Import source.' : 'Select a project first.'}
+            </p>
+          ) : null}
         </div>
       ) : activeTab === 'cases' ? (
         <div className="panel">
@@ -160,7 +173,7 @@ export function ProjectSourcePage() {
           <ClassificationSheetPanel key={refreshToken} />
         </div>
       ) : (
-        <FrameworkMatrixPanel />
+        <FrameworkMatrixPanel key={refreshToken} />
       )}
     </section>
   )
