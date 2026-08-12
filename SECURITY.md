@@ -13,8 +13,7 @@ This project has not yet reached a `1.0` release.
 Please **do not open a public GitHub issue** for security vulnerabilities.
 
 Instead, report privately via one of:
-- GitHub's [private vulnerability reporting](https://github.com/navalsingh9/naval-qda/security/advisories/new) (Security tab → "Report a vulnerability"), or
-- Email the maintainer directly (add a contact address here — e.g. `security@navalqda.example`).
+- GitHub's [private vulnerability reporting](https://github.com/navalsingh9/naval-qda/security/advisories/new) (Security tab → "Report a vulnerability")
 
 Please include:
 - A description of the issue and its impact
