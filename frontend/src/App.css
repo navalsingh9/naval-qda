@@ -221,9 +221,9 @@
   transition: transform var(--transition-fast);
 }
 
-/* Compact "active project" row in the sidebar — replaces the old full
-   project list (with a delete button squeezed in) that left almost no
-   room for the project name itself. Click it to open the full explorer. */
+/* Purely informational status readout now — Project Explorer is a real
+   nav destination (see navItems), not something hidden behind clicking
+   this. No hover/cursor affordance since it's no longer interactive. */
 .active-project-row {
   width: 100%;
   display: flex;
@@ -235,13 +235,6 @@
   padding: var(--space-2) var(--space-3);
   background: rgba(255, 255, 255, 0.04);
   color: var(--sidebar-text);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.active-project-row:hover {
-  background: var(--sidebar-bg-hover);
-  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .active-project-name {

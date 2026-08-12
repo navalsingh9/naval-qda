@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import './App.css'
 import { SidebarLayout } from './components/SidebarLayout'
+import { ProjectExplorerPage } from './components/ProjectExplorerPage'
 import { CodingWorkspacePage } from './components/CodingWorkspacePage'
 import { ProjectSourcePage } from './components/ProjectSourcePage'
 import { QueryWorkspacePage } from './components/QueryWorkspacePage'
@@ -14,7 +15,8 @@ function App() {
     <HashRouter>
       <Routes>
         <Route element={<SidebarLayout />}>
-          <Route index element={<Navigate to="/sources" replace />} />
+          <Route index element={<Navigate to="/projects" replace />} />
+          <Route path="/projects" element={<ProjectExplorerPage />} />
           <Route path="/sources" element={<ProjectSourcePage />} />
           <Route path="/coding" element={<CodingWorkspacePage />} />
           <Route path="/query" element={<QueryWorkspacePage />} />

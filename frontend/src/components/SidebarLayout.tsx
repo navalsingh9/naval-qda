@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import {
+  LayoutGrid,
   FolderOpen,
   Tag,
   Search,
@@ -9,20 +10,18 @@ import {
   ClipboardList,
   Bot,
   Microscope,
-  AlertTriangle,
   Folder,
-  FolderPlus,
-  Trash2,
   ChevronLeft,
   ChevronRight,
   PanelLeftOpen,
-  X,
-  Check,
 } from 'lucide-react'
 import { useProjectStore } from '../stores/useProjectStore'
 
-// Navigation items with professional, consistent line icons
+// Navigation items with professional, consistent line icons. Project
+// Explorer sits first — it's the thing everything else is scoped under,
+// not a sub-feature reachable only by clicking the active project.
 const navItems = [
+  { to: '/projects', label: 'Project Explorer', icon: LayoutGrid },
   { to: '/sources', label: 'Sources', icon: FolderOpen },
   { to: '/coding', label: 'Coding', icon: Tag },
   { to: '/query', label: 'Query', icon: Search },
@@ -33,11 +32,8 @@ const navItems = [
 ]
 
 export function SidebarLayout() {
-  const { projects, selectedProjectId, selectProject, deleteProject, createProject } = useProjectStore()
-  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null)
+  const { projects, selectedProjectId } = useProjectStore()
   const [collapsed, setCollapsed] = useState(false)
-  const [explorerOpen, setExplorerOpen] = useState(false)
-  const [newProjectName, setNewProjectName] = useState('')
   const [sidebarWidth, setSidebarWidth] = useState<number>(280)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStartX, setDragStartX] = useState<number>(0)
@@ -106,21 +102,6 @@ export function SidebarLayout() {
     }
   }, [isDragging, dragStartX, dragStartWidth])
 
-  const handleDeleteClick = (projectId: number) => {
-    setPendingDeleteId(projectId)
-  }
-
-  const handleConfirmDelete = async (projectId: number) => {
-    await deleteProject(projectId)
-    setPendingDeleteId(null)
-  }
-
-  const handleCreateProject = async () => {
-    if (!newProjectName.trim()) return
-    await createProject(newProjectName)
-    setNewProjectName('')
-  }
-
   const activeProject = projects.find((project) => project.id === selectedProjectId) ?? null
 
   return (
@@ -166,103 +147,17 @@ export function SidebarLayout() {
           <PanelLeftOpen size={18} strokeWidth={2} />
         </button>
 
+        {/* Purely informational now — not a hidden trigger for Project
+            Explorer, which is its own nav destination below. */}
         <div className="sidebar-section">
-          <h2>Project</h2>
-          <button
-            type="button"
-            className="active-project-row"
-            onClick={() => setExplorerOpen(true)}
-            title={activeProject ? `${activeProject.name} — click to browse projects` : 'Click to browse or create a project'}
-          >
+          <h2>Active project</h2>
+          <div className="active-project-row" title={activeProject ? activeProject.name : 'No project selected — pick one in Project Explorer'}>
             <span className="project-icon" style={{ display: 'inline-flex', flexShrink: 0 }}><Folder size={15} strokeWidth={2} /></span>
             <span className="active-project-name">
               {activeProject ? activeProject.name : 'No project selected'}
             </span>
-          </button>
-        </div>
-
-        {explorerOpen && (
-          <div className="modal-overlay" onClick={() => setExplorerOpen(false)}>
-            <div className="modal project-explorer" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>Project Explorer</h3>
-                <button type="button" className="chart-action-btn" onClick={() => setExplorerOpen(false)} aria-label="Close">
-                  <X size={18} strokeWidth={2} />
-                </button>
-              </div>
-
-              <div className="inline-form" style={{ marginBottom: 'var(--space-4)' }}>
-                <input
-                  value={newProjectName}
-                  onChange={(e) => setNewProjectName(e.target.value)}
-                  placeholder="New project name"
-                  onKeyDown={(e) => { if (e.key === 'Enter') void handleCreateProject() }}
-                />
-                <button type="button" className="primary-button" onClick={() => void handleCreateProject()} disabled={!newProjectName.trim()}>
-                  <FolderPlus size={15} strokeWidth={2} style={{ marginRight: '6px', verticalAlign: '-2px' }} />
-                  Create
-                </button>
-              </div>
-
-              <ul className="project-explorer-list">
-                {projects.length === 0 ? (
-                  <li className="empty">No projects yet — create one above.</li>
-                ) : (
-                  projects.map((project) => (
-                    <li key={project.id}>
-                      {pendingDeleteId === project.id ? (
-                        <div className="project-delete-confirm">
-                          <span style={{ fontWeight: 'var(--font-semibold)', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                            <AlertTriangle size={16} strokeWidth={2} /> Delete "{project.name}" and ALL its data? This cannot be undone.
-                          </span>
-                          <div className="inline-form">
-                            <button
-                              type="button"
-                              className="ghost-button"
-                              onClick={() => void handleConfirmDelete(project.id)}
-                              style={{ background: 'var(--error-50)', color: 'var(--error-700)', borderColor: 'var(--error-200)', fontWeight: 'var(--font-semibold)' }}
-                            >
-                              Yes, Delete Project
-                            </button>
-                            <button type="button" className="ghost-button" onClick={() => setPendingDeleteId(null)}>
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className={`project-explorer-row${project.id === selectedProjectId ? ' active' : ''}`}>
-                          <button
-                            type="button"
-                            className="project-explorer-select"
-                            onClick={() => { selectProject(project.id); setExplorerOpen(false) }}
-                          >
-                            <span className="project-icon" style={{ display: 'inline-flex', flexShrink: 0 }}><Folder size={16} strokeWidth={2} /></span>
-                            <span className="project-explorer-name">{project.name}</span>
-                            {project.id === selectedProjectId && (
-                              <span className="project-explorer-active-badge">
-                                <Check size={13} strokeWidth={2.5} /> Active
-                              </span>
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            className="project-delete-button"
-                            title={`Delete ${project.name}`}
-                            aria-label={`Delete ${project.name}`}
-                            onClick={() => handleDeleteClick(project.id)}
-                            style={{ color: 'var(--error-600)' }}
-                          >
-                            <Trash2 size={15} strokeWidth={2} />
-                          </button>
-                        </div>
-                      )}
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
           </div>
-        )}
+        </div>
 
         <nav className="sidebar-nav">
           {navItems.map((item) => {
