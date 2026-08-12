@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { Plus, X, Download, RefreshCw, RotateCcw } from 'lucide-react'
 import { useProjectStore } from '../stores/useProjectStore'
 import { useSourceStore } from '../stores/useSourceStore'
 import { useNodeStore } from '../stores/useNodeStore'
@@ -6,8 +7,8 @@ import { BarChart, PieChart, Treemap, Dendrogram, colorFor, CHART_COLORS, type B
 
 // Chart component types
 type ChartComponentType = 
-  | { type: 'bar'; data: BarDatum[]; title: string; description: string; source: 'coding' }
-  | { type: 'pie'; data: BarDatum[]; title: string; description: string; donut?: boolean; source: 'coding' }
+  | { type: 'bar'; data: BarDatum[]; title: string; description: string; source: 'coding'; measure?: 'references' | 'sources' }
+  | { type: 'pie'; data: BarDatum[]; title: string; description: string; donut?: boolean; source: 'coding'; measure?: 'references' | 'sources' }
   | { type: 'treemap'; data: TreemapNode[]; title: string; description: string; source: 'hierarchy' }
   | { type: 'dendrogram'; tree: DendroNode | null; labels: string[]; title: string; description: string; source: 'similarity' }
   | { type: 'wordcloud'; words: {word: string; weight: number}[]; title: string; description: string; source: 'wordcloud' }
@@ -42,7 +43,7 @@ const LAYOUT_PRESETS: LayoutPreset[] = [
 export function VisualizationDashboard() {
   const { selectedProjectId } = useProjectStore()
   const { sources, loadSources } = useSourceStore()
-  const { tree, loadTree } = useNodeStore()
+  const { loadTree } = useNodeStore()
   
   // Layout state
   const [selectedLayout, setSelectedLayout] = useState<string>('2x2')
@@ -59,6 +60,22 @@ export function VisualizationDashboard() {
   
   // Refs for export
   const dashboardRef = useRef<HTMLDivElement>(null)
+
+  // "Add chart" dropdown open/close state — was previously hardcoded to
+  // display:none with no toggle, so the menu could never actually open.
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false)
+  const addMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isAddMenuOpen) return
+    const handleClickOutside = (event: MouseEvent) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(event.target as Node)) {
+        setIsAddMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isAddMenuOpen])
   
   // Load data on project change
   useEffect(() => {
@@ -101,9 +118,10 @@ export function VisualizationDashboard() {
         componentType: {
           type: 'bar',
           data: [],
-          title: 'Coding References',
+          title: 'Coding References by Node',
           description: 'References per node',
-          source: 'coding'
+          source: 'coding',
+          measure: 'references'
         },
         isOpen: true,
         chartKind: 'bar'
@@ -113,10 +131,11 @@ export function VisualizationDashboard() {
         componentType: {
           type: 'pie',
           data: [],
-          title: 'Code Distribution',
-          description: 'Distribution by sources',
+          title: 'Sources Coded by Node',
+          description: 'Distinct sources coded, per node',
           donut: true,
-          source: 'coding'
+          source: 'coding',
+          measure: 'sources'
         },
         isOpen: true,
         chartKind: 'pie'
@@ -169,30 +188,30 @@ export function VisualizationDashboard() {
           nodeId: number; name: string; path: string; references: number; sources: number
         }>
         
+        // Both bar and pie read off the same measure switch (references vs
+        // sources coded) so two default charts show genuinely different
+        // data instead of the same numbers twice in different shapes.
+        const measureKey = componentType.measure ?? 'references'
+        const values: BarDatum[] = data
+          .map((row, i) => ({ 
+            label: row.path || row.name, 
+            value: row[measureKey],
+            color: colorFor(i) 
+          }))
+          .filter((row) => row.value > 0)
+
         if (componentType.type === 'bar') {
-          const barData: BarDatum[] = data
-            .map((row, i) => ({ 
-              label: row.path || row.name, 
-              value: row.references,
-              color: colorFor(i) 
-            }))
-            .filter((row) => row.value > 0)
-            .sort((a, b) => b.value - a.value)
-          
+          const barData = [...values].sort((a, b) => b.value - a.value)
           setCharts(prev => prev.map(c => 
-            c.id === chart.id ? { ...c, componentType: { ...c.componentType, data: barData } } : c
+            c.id === chart.id && c.componentType.type === 'bar'
+              ? { ...c, componentType: { ...c.componentType, data: barData } }
+              : c
           ))
         } else if (componentType.type === 'pie') {
-          const pieData: BarDatum[] = data
-            .map((row, i) => ({ 
-              label: row.path || row.name, 
-              value: row.references,
-              color: colorFor(i) 
-            }))
-            .filter((row) => row.value > 0)
-          
           setCharts(prev => prev.map(c => 
-            c.id === chart.id ? { ...c, componentType: { ...c.componentType, data: pieData } } : c
+            c.id === chart.id && c.componentType.type === 'pie'
+              ? { ...c, componentType: { ...c.componentType, data: values } }
+              : c
           ))
         }
       } 
@@ -201,7 +220,9 @@ export function VisualizationDashboard() {
         const data = await window.api.visualize.hierarchyChartData({ projectId: selectedProjectId }) as TreemapNode[]
         
         setCharts(prev => prev.map(c => 
-          c.id === chart.id ? { ...c, componentType: { ...c.componentType, data } } : c
+          c.id === chart.id && c.componentType.type === 'treemap'
+            ? { ...c, componentType: { ...c.componentType, data } }
+            : c
         ))
       }
       
@@ -215,7 +236,9 @@ export function VisualizationDashboard() {
         }) as { word: string; weight: number }[]
         
         setCharts(prev => prev.map(c => 
-          c.id === chart.id ? { ...c, componentType: { ...c.componentType, words: data } } : c
+          c.id === chart.id && c.componentType.type === 'wordcloud'
+            ? { ...c, componentType: { ...c.componentType, words: data } }
+            : c
         ))
       }
       
@@ -290,7 +313,7 @@ export function VisualizationDashboard() {
           result.push({ name: node.name, value: node.value, path })
           node.children?.forEach(child => walk(child, path))
         }
-        nodes.forEach(walk)
+        nodes.forEach((node) => walk(node))
         return result
       }
       const flatData = flattenData(chart.componentType.data)
@@ -315,9 +338,10 @@ export function VisualizationDashboard() {
     await addChart({
       type: 'bar',
       data: [],
-      title: 'Coding References',
+      title: 'Coding References by Node',
       description: 'References per node',
-      source: 'coding'
+      source: 'coding',
+      measure: 'references'
     }, 'bar')
   }, [addChart])
 
@@ -325,10 +349,11 @@ export function VisualizationDashboard() {
     await addChart({
       type: 'pie',
       data: [],
-      title: 'Code Distribution',
-      description: 'Distribution of codes',
+      title: 'Sources Coded by Node',
+      description: 'Distinct sources coded, per node',
       donut: true,
-      source: 'coding'
+      source: 'coding',
+      measure: 'sources'
     }, 'pie')
   }, [addChart])
 
@@ -352,16 +377,11 @@ export function VisualizationDashboard() {
     })
   }, [addChart])
 
-  const createDendrogram = useCallback(async () => {
-    await addChart({
-      type: 'dendrogram',
-      tree: null,
-      labels: [],
-      title: 'Similarity Clustering',
-      description: 'Source similarity dendrogram',
-      source: 'similarity'
-    })
-  }, [addChart])
+  // Note: dendrogram/"Similarity Clustering" charts aren't wired up here —
+  // loadChartData has no case for source: 'similarity', so a chart created
+  // this way would sit permanently empty. That analysis lives in its own
+  // place; see SidebarLayout/App routing for where similarity clustering
+  // is actually reachable.
 
   // Get open/closed charts
   const openCharts = useMemo(() => charts.filter(c => c.isOpen), [charts])
@@ -371,7 +391,9 @@ export function VisualizationDashboard() {
   const getGridStyle = useCallback((position: { row: number; col: number; spanRow?: number; spanCol?: number }) => {
     return {
       gridRow: `${position.row + 1} / span ${position.spanRow || 1}`,
-      gridColumn: `${position.col + 1} / span ${position.spanCol || 1}`
+      gridColumn: `${position.col + 1} / span ${position.spanCol || 1}`,
+      minWidth: 0,
+      minHeight: 0
     }
   }, [])
 
@@ -383,13 +405,15 @@ export function VisualizationDashboard() {
     const isLoading = loading[chart.id]
     const error = errors[chart.id]
     
-    // Apply filter to data
-    let filteredData = componentType.data
-    if ((componentType.type === 'bar' || componentType.type === 'pie') && globalFilter) {
+    // Apply filter to data — narrow the union by componentType.type before
+    // touching type-specific fields, and default sensibly for other types.
+    const isBarOrPie = componentType.type === 'bar' || componentType.type === 'pie'
+    let filteredData: BarDatum[] = isBarOrPie ? componentType.data : []
+    if (isBarOrPie && globalFilter) {
       filteredData = componentType.data.filter(d => d.label.toLowerCase().includes(globalFilter.toLowerCase()))
     }
     
-    let filteredWords = componentType.words
+    let filteredWords: { word: string; weight: number }[] = componentType.type === 'wordcloud' ? componentType.words : []
     if (componentType.type === 'wordcloud' && globalFilter) {
       filteredWords = componentType.words.filter(w => w.word.toLowerCase().includes(globalFilter.toLowerCase()))
     }
@@ -413,7 +437,7 @@ export function VisualizationDashboard() {
     }
     
     // Apply filter to treemap data
-    let filteredTreemapData = componentType.data
+    let filteredTreemapData: TreemapNode[] = componentType.type === 'treemap' ? componentType.data : []
     if (componentType.type === 'treemap' && globalFilter) {
       const filterLower = globalFilter.toLowerCase()
       const filterNode = (node: TreemapNode): TreemapNode | null => {
@@ -435,10 +459,10 @@ export function VisualizationDashboard() {
     const hasCodings = filteredTreemapData.some((node: TreemapNode) => node.value > 0 || (node.children?.length ?? 0) > 0)
     
     const hasData = 
-      (componentType.type === 'bar' || componentType.type === 'pie') && componentType.data.length > 0 && filteredData.length > 0
-      || componentType.type === 'wordcloud' && componentType.words.length > 0 && filteredWords.length > 0
-      || componentType.type === 'treemap' && filteredTreemapData.length > 0 && hasCodings
-      || componentType.type === 'dendrogram' && componentType.tree !== null
+      (isBarOrPie && componentType.data.length > 0 && filteredData.length > 0)
+      || (componentType.type === 'wordcloud' && componentType.words.length > 0 && filteredWords.length > 0)
+      || (componentType.type === 'treemap' && filteredTreemapData.length > 0 && hasCodings)
+      || (componentType.type === 'dendrogram' && componentType.tree !== null)
     
     const isEmpty = !isLoading && !hasData
     
@@ -452,8 +476,11 @@ export function VisualizationDashboard() {
           overflow: 'hidden',
           background: 'var(--bg-primary)',
           height: '100%',
+          minHeight: 0,
+          minWidth: 0,
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          resize: 'both'
         }}
       >
         {/* Chart header */}
@@ -477,6 +504,25 @@ export function VisualizationDashboard() {
             </p>
           </div>
           <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+            {(componentType.type === 'bar' || componentType.type === 'pie') && (
+              <select 
+                value={chart.chartKind || componentType.type}
+                onChange={(e) => changeChartKind(chart.id, e.target.value as 'bar' | 'pie' | 'table')}
+                title="Change chart view"
+                style={{
+                  padding: 'var(--space-1) var(--space-2)',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-light)',
+                  background: 'var(--bg-primary)',
+                  fontSize: 'var(--text-xs)',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="bar">Bar Chart</option>
+                <option value="pie">Pie Chart</option>
+                <option value="table">Table</option>
+              </select>
+            )}
             {globalFilter && (
               <span 
                 className="filter-badge"
@@ -492,43 +538,25 @@ export function VisualizationDashboard() {
                 Filtered: {globalFilter}
               </span>
             )}
-            {componentType.type === 'wordcloud' && (
+            {(componentType.type === 'wordcloud' || componentType.type === 'bar' || componentType.type === 'pie') && (
               <button
                 type="button"
                 onClick={handleExport}
                 title="Export as CSV"
                 className="chart-action-btn"
+                aria-label="Export as CSV"
               >
-                📥
-              </button>
-            )}
-            {componentType.type === 'bar' && (
-              <button
-                type="button"
-                onClick={handleExport}
-                title="Export as CSV"
-                className="chart-action-btn"
-              >
-                📥
-              </button>
-            )}
-            {componentType.type === 'pie' && (
-              <button
-                type="button"
-                onClick={handleExport}
-                title="Export as CSV"
-                className="chart-action-btn"
-              >
-                📥
+                <Download size={15} strokeWidth={2} />
               </button>
             )}
             <button
               type="button"
               onClick={handleClose}
               title="Close chart"
+              aria-label="Close chart"
               className="chart-action-btn delete"
             >
-              ✕
+              <X size={15} strokeWidth={2} />
             </button>
           </div>
         </div>
@@ -539,10 +567,12 @@ export function VisualizationDashboard() {
           style={{
             flex: 1,
             padding: 'var(--space-4)',
-            minHeight: '200px',
+            minHeight: 0,
+            minWidth: 0,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            flexDirection: 'column',
+            overflow: 'auto',
+            ...(isLoading || error || isEmpty ? { alignItems: 'center', justifyContent: 'center' } : {})
           }}
         >
           {isLoading ? (
@@ -556,25 +586,7 @@ export function VisualizationDashboard() {
                 : 'No data available. Add some coded content to see charts.'}
             </p>
           ) : componentType.type === 'bar' || componentType.type === 'pie' ? (
-            <>
-              <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-3)' }}>
-                <select 
-                  value={chart.chartKind || componentType.type}
-                  onChange={(e) => changeChartKind(chart.id, e.target.value as 'bar' | 'pie' | 'table')}
-                  style={{
-                    padding: 'var(--space-1) var(--space-2)',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--border-light)',
-                    background: 'var(--bg-primary)',
-                    fontSize: 'var(--text-xs)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="bar">Bar Chart</option>
-                  <option value="pie">Pie Chart</option>
-                  <option value="table">Table</option>
-                </select>
-              </div>
+            <div style={{ width: '100%', height: '100%', minHeight: 0, minWidth: 0, flex: 1, display: 'flex', flexDirection: 'column' }}>
               {chart.chartKind === 'table' ? (
                 <div className="sheet-table-wrap">
                   <table className="sheet-table">
@@ -599,13 +611,13 @@ export function VisualizationDashboard() {
               ) : (
                 <BarChart data={filteredData} onClick={handleFilterClick} colors={CHART_COLORS} />
               )}
-            </>
+            </div>
           ) : componentType.type === 'treemap' ? (
-            <div style={{ minHeight: '400px', background: 'var(--bg-secondary)', width: '100%', height: '100%' }}>
-              <Treemap data={filteredTreemapData} width="100%" height="100%" onClick={handleFilterClick} colors={CHART_COLORS} />
+            <div style={{ width: '100%', height: '100%', minHeight: 0, minWidth: 0, flex: 1 }}>
+              <Treemap data={filteredTreemapData} onClick={handleFilterClick} colors={CHART_COLORS} />
             </div>
           ) : componentType.type === 'dendrogram' ? (
-            <Dendrogram tree={componentType.tree} labels={componentType.labels} width="100%" colors={CHART_COLORS} />
+            <Dendrogram tree={componentType.tree} colors={CHART_COLORS} />
           ) : componentType.type === 'wordcloud' ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', justifyContent: 'center', minHeight: '200px' }}>
               {filteredWords.map((word, index) => (
@@ -634,7 +646,7 @@ export function VisualizationDashboard() {
         </div>
       </div>
     )
-  }, [charts, globalFilter, loading, errors, closeChart, exportChartDataAsCSV, clearFilter, applyFilter])
+  }, [charts, globalFilter, loading, errors, closeChart, exportChartDataAsCSV, clearFilter, applyFilter, changeChartKind])
 
   return (
     <section className="page-card" ref={dashboardRef}>
@@ -645,103 +657,65 @@ export function VisualizationDashboard() {
         </div>
         <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
           {/* Add chart dropdown */}
-          <div className="dropdown" style={{ position: 'relative' }}>
+          <div className="dropdown" style={{ position: 'relative' }} ref={addMenuRef}>
             <button
               type="button"
               className="primary-button"
+              onClick={() => setIsAddMenuOpen((open) => !open)}
+              aria-haspopup="menu"
+              aria-expanded={isAddMenuOpen}
               style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}
             >
-              <span>➕ Add Chart</span>
+              <Plus size={15} strokeWidth={2} />
+              <span>Add Chart</span>
             </button>
-            <div 
-              className="dropdown-menu"
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                zIndex: 100,
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-light)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: 'var(--shadow-lg)',
-                minWidth: '200px',
-                padding: 'var(--space-2)',
-                display: 'none'
-              }}
-            >
-              <button 
-                type="button"
-                onClick={createBarChart}
+            {isAddMenuOpen && (
+              <div 
+                className="dropdown-menu"
+                role="menu"
                 style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: 'var(--space-2) var(--space-3)',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: 'var(--text-sm)'
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  marginTop: 'var(--space-1)',
+                  zIndex: 100,
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: 'var(--radius-md)',
+                  boxShadow: 'var(--shadow-lg)',
+                  minWidth: '200px',
+                  padding: 'var(--space-2)'
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
               >
-                Bar Chart
-              </button>
-              <button 
-                type="button"
-                onClick={createPieChart}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: 'var(--space-2) var(--space-3)',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: 'var(--text-sm)'
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-              >
-                Pie Chart
-              </button>
-              <button 
-                type="button"
-                onClick={createWordCloud}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: 'var(--space-2) var(--space-3)',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: 'var(--text-sm)'
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-              >
-                Word Cloud
-              </button>
-              <button 
-                type="button"
-                onClick={createTreemap}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: 'var(--space-2) var(--space-3)',
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: 'var(--text-sm)'
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
-              >
-                Treemap
-              </button>
-            </div>
+                {[
+                  { label: 'References by Node', action: createBarChart },
+                  { label: 'Sources Coded by Node', action: createPieChart },
+                  { label: 'Word Cloud', action: createWordCloud },
+                  { label: 'Hierarchy Treemap', action: createTreemap },
+                ].map((item) => (
+                  <button 
+                    key={item.label}
+                    type="button"
+                    onClick={() => { void item.action(); setIsAddMenuOpen(false) }}
+                    className="dropdown-menu-item"
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: 'var(--space-2) var(--space-3)',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: 'var(--text-sm)'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           {/* Layout selector */}
@@ -772,7 +746,8 @@ export function VisualizationDashboard() {
             title="Refresh all chart data"
             style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}
           >
-            <span>🔄 Refresh</span>
+            <RefreshCw size={15} strokeWidth={2} />
+            <span>Refresh</span>
           </button>
           
           {/* Clear filter button */}
@@ -783,7 +758,8 @@ export function VisualizationDashboard() {
               className="ghost-button"
               style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}
             >
-              <span>🔄 Clear Filter</span>
+              <X size={15} strokeWidth={2} />
+              <span>Clear Filter</span>
             </button>
           )}
         </div>
@@ -791,7 +767,7 @@ export function VisualizationDashboard() {
 
       <p className="description">
         Build custom dashboards with interactive charts. Click on chart elements to filter all charts. 
-        Use the ➕ button to add charts and the ✕ button to close them.
+        Use the Add Chart button to add charts and the close icon to remove them.
       </p>
 
       {/* Closed charts indicator */}
@@ -824,12 +800,16 @@ export function VisualizationDashboard() {
                 border: '1px solid var(--border-light)',
                 borderRadius: 'var(--radius-sm)',
                 fontSize: 'var(--text-xs)',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 'var(--space-1)'
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)' }}
               onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
             >
-              {chart.componentType.title} ✨
+              <RotateCcw size={12} strokeWidth={2} />
+              {chart.componentType.title}
             </button>
           ))}
           <button
@@ -855,8 +835,8 @@ export function VisualizationDashboard() {
         className="dashboard-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: `repeat(${currentLayout.cols}, 1fr)`,
-          gridTemplateRows: `repeat(${currentLayout.rows}, 1fr)`,
+          gridTemplateColumns: `repeat(${currentLayout.cols}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${currentLayout.rows}, minmax(340px, 1fr))`,
           gap: 'var(--space-4)',
           minHeight: '600px'
         }}
@@ -897,7 +877,9 @@ export function VisualizationDashboard() {
                 e.currentTarget.style.background = 'var(--bg-secondary)'
               }}
             >
-              <span style={{ fontSize: 'var(--text-lg)' }}>➕ Add Chart</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-1)', fontSize: 'var(--text-sm)' }}>
+                <Plus size={16} strokeWidth={2} /> Add Chart
+              </span>
             </div>
           ))
         }
@@ -909,10 +891,10 @@ export function VisualizationDashboard() {
         <p className="description">Quick-start with pre-configured visualizations:</p>
         <div style={{ display: 'flex', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
           <button type="button" onClick={createBarChart} className="secondary-button">
-            Coding Bar Chart
+            References by Node
           </button>
           <button type="button" onClick={createPieChart} className="secondary-button">
-            Code Distribution Pie
+            Sources Coded by Node
           </button>
           <button type="button" onClick={createWordCloud} className="secondary-button">
             Source Word Cloud

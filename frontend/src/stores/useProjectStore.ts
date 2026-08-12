@@ -45,7 +45,11 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       const created = await window.api.createProject(trimmedName)
       set((state) => ({
         projects: [...state.projects, { ...created, created_at: new Date().toISOString() }],
-        selectedProjectId: created.id,
+        // Only auto-activate if nothing was selected yet (e.g. very first
+        // project ever created) — otherwise creating a new project
+        // shouldn't yank the researcher away from whatever project
+        // they're currently working in.
+        selectedProjectId: state.selectedProjectId ?? created.id,
         loading: false,
       }))
     } catch (error) {

@@ -1,18 +1,34 @@
-// Lightweight, dependency-free SVG chart primitives
-// Bar/pie/treemap/dendrogram with click handlers for filtering
+// Chart primitives built on recharts — gives us real responsive sizing
+// (ResponsiveContainer tracks its parent via ResizeObserver internally),
+// proper tooltips/legends, and a battle-tested treemap layout instead of
+// a hand-rolled one.
+
+import { useMemo } from 'react'
+import {
+  ResponsiveContainer,
+  BarChart as RBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Cell,
+  PieChart as RPieChart,
+  Pie,
+  Legend,
+  Treemap as RTreemap,
+} from 'recharts'
 
 // Extended color palette with more options
 export const CHART_COLORS = [
-  '#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-  '#06b6d4', '#ec4899', '#84cc16', '#1e40af', '#db2777',
-  '#059669', '#ea580c', '#8b5cf6', '#1f2937', '#6366f1',
-  '#22c55e', '#f97316', '#eab308', '#f43f5e', '#a855f7'
+  '#1264a3', '#007a5a', '#e01e5a', '#ecb22e', '#36c5f0',
+  '#2bac76', '#6b46c1', '#e8912d', '#3f0e40', '#00a0d2',
+  '#d94848', '#61b15a', '#a06cd5', '#e0602a', '#4a90d9',
 ]
 
 export const CHART_COLORS_LIGHT = [
-  '#a855f7', '#60a5fa', '#34d399', '#fbbf24', '#f87171',
-  '#22d3ee', '#f472b6', '#a3e635', '#3b82f6', '#ec4899',
-  '#10b981', '#fdba74', '#c4b5fd', '#4b5563', '#818cf8'
+  '#6fbde3', '#5cc7a2', '#ee7099', '#f6d68e', '#8fdcf5',
+  '#7ecda6', '#a58ee0', '#f2b876', '#9d6f9e', '#6fd0ec',
 ]
 
 export function colorFor(index: number): string {
@@ -25,11 +41,33 @@ export function colorForLight(index: number): string {
 
 export type BarDatum = { label: string; value: number; color?: string }
 
-// Enhanced BarChart with responsive sizing and better rendering
+function ChartTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name?: string; value?: number | string; payload?: { label?: string; name?: string } }> }) {
+  if (!active || !payload?.length) return null
+  const item = payload[0]
+  const label = item.payload?.label ?? item.payload?.name ?? item.name
+  return (
+    <div
+      style={{
+        background: 'var(--bg-primary)',
+        border: '1px solid var(--border-light)',
+        borderRadius: 'var(--radius-md)',
+        padding: 'var(--space-2) var(--space-3)',
+        boxShadow: 'var(--shadow-md)',
+        fontSize: 'var(--text-xs)',
+        color: 'var(--text-primary)',
+        maxWidth: '260px'
+      }}
+    >
+      <div style={{ fontWeight: 'var(--font-bold)', marginBottom: '2px' }}>{label}</div>
+      <div style={{ color: 'var(--text-secondary)' }}>{item.value}</div>
+    </div>
+  )
+}
+
+// Horizontal bar chart — labels read left to right, which is far more
+// legible than rotated axis labels once node names get long.
 export function BarChart({
   data,
-  height = 24,
-  width: containerWidth,
   onClick,
   colors = CHART_COLORS
 }: {
@@ -39,103 +77,55 @@ export function BarChart({
   onClick?: (label: string) => void;
   colors?: string[];
 }) {
-  const maxValue = Math.max(1, ...data.map(d => d.value))
-  const rowHeight = height
-  const gap = 8
-  const chartHeight = data.length * (rowHeight + gap)
-  
-  // Calculate available width based on container
-  const labelWidth = 180
-  const availableWidth = typeof containerWidth === 'number' ? containerWidth : 800
-  const chartWidth = availableWidth - labelWidth - 48
-  
   if (!data.length) return null
-  
+
+  // Sort so the largest bar is on top, matching how most researchers scan
+  // a ranked list, and give the chart enough height per row to stay
+  // readable instead of squeezing dozens of rows into a fixed box.
+  const rowHeight = 32
+  const chartHeight = Math.max(240, data.length * rowHeight + 40)
+
   return (
-    <svg 
-      className="chart-svg" 
-      viewBox={`0 0 ${labelWidth + chartWidth + 48} ${chartHeight}`} 
-      width="100%" 
-      height={chartHeight}
-      style={{ 
-        cursor: onClick ? 'pointer' : 'default',
-        overflow: 'visible'
-      }}
-    >
-      {data.map((d, i) => {
-        const y = i * (rowHeight + gap)
-        const barWidth = (d.value / maxValue) * chartWidth
-        const barColor = d.color ?? colors[i % colors.length]
-        
-        return (
-          <g key={d.label} onClick={() => onClick?.(d.label)} style={{ cursor: onClick ? 'pointer' : 'default' }}>
-            {/* Label */}
-            <text 
-              x={labelWidth - 8} 
-              y={y + rowHeight * 0.7} 
-              textAnchor="end" 
-              className="chart-label" 
-              style={{ 
-                fontFamily: 'var(--font-family)', 
-                cursor: onClick ? 'pointer' : 'default',
-                fontSize: '12px'
-              }}
-            >
-              {d.label.length > 30 ? `${d.label.substring(0, 27)}...` : d.label}
-            </text>
-            
-            {/* Bar */}
-            <rect 
-              x={labelWidth} 
-              y={y + 2} 
-              width={Math.max(4, barWidth)} 
-              height={rowHeight - 4} 
-              rx={6} 
-              fill={barColor} 
-              opacity={0.85}
-              onMouseEnter={(e) => {
-                e.currentTarget.setAttribute('opacity', '1')
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.setAttribute('opacity', '0.85')
-              }}
-            />
-            
-            {/* Invisible click area */}
-            <rect 
-              x={labelWidth} 
-              y={y} 
-              width={chartWidth} 
-              height={rowHeight} 
-              rx={6} 
-              fill="transparent" 
-              stroke="transparent"
-            />
-            
-            {/* Value */}
-            <text 
-              x={labelWidth + barWidth + 12} 
-              y={y + rowHeight * 0.7} 
-              className="chart-value" 
-              style={{ 
-                fontFamily: 'var(--font-family)', 
-                cursor: onClick ? 'pointer' : 'default',
-                fontSize: '11px'
-              }}
-            >
-              {d.value}
-            </text>
-          </g>
-        )
-      })}
-    </svg>
+    <div style={{ width: '100%', height: chartHeight, minWidth: 0, minHeight: 0 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RBarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 8, right: 24, bottom: 8, left: 8 }}
+          barCategoryGap={8}
+        >
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" horizontal={false} />
+          <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} allowDecimals={false} />
+          <YAxis
+            type="category"
+            dataKey="label"
+            width={Math.min(220, Math.max(90, ...data.map(d => d.label.length * 6.2)))}
+            tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
+            tickFormatter={(value: string) => (value.length > 28 ? `${value.slice(0, 25)}...` : value)}
+          />
+          <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--bg-hover)' }} />
+          <Bar
+            dataKey="value"
+            radius={[0, 6, 6, 0]}
+            onClick={(entry: unknown) => {
+              const d = entry as BarDatum
+              if (d?.label) onClick?.(d.label)
+            }}
+            cursor={onClick ? 'pointer' : 'default'}
+          >
+            {data.map((d, i) => (
+              <Cell key={d.label} fill={d.color ?? colors[i % colors.length]} />
+            ))}
+          </Bar>
+        </RBarChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
 
-// Enhanced PieChart with better sizing and color support
+// Pie/donut chart with a legend that shows value + percentage.
 export function PieChart({
   data,
-  size = 220,
   donut = true,
   onClick,
   colors = CHART_COLORS
@@ -146,129 +136,46 @@ export function PieChart({
   onClick?: (label: string) => void;
   colors?: string[];
 }) {
-  const total = data.reduce((sum, d) => sum + d.value, 0)
-  const radius = size / 2
-  const innerRadius = donut ? radius * 0.55 : 0
-  const cx = radius
-  const cy = radius
-  
+  const total = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data])
   if (!total) return null
-  
-  let angle = -Math.PI / 2
-  const arcs = data.map((d, i) => {
-    const fraction = d.value / total
-    const startAngle = angle
-    const endAngle = angle + fraction * Math.PI * 2
-    angle = endAngle
-    
-    const point = (r: number, a: number) => [cx + r * Math.cos(a), cy + r * Math.sin(a)]
-    const [x1, y1] = point(radius, startAngle)
-    const [x2, y2] = point(radius, endAngle)
-    const [ix1, iy1] = point(innerRadius, endAngle)
-    const [ix2, iy2] = point(innerRadius, startAngle)
-    const largeArc = fraction > 0.5 ? 1 : 0
-    
-    const path = innerRadius > 0
-      ? `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${ix1} ${iy1} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix2} ${iy2} Z`
-      : `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
-    
-    return { 
-      path, 
-      color: d.color ?? colors[i % colors.length], 
-      label: d.label, 
-      value: d.value, 
-      pct: fraction * 100 
-    }
-  })
-  
+
   return (
-    <div className="pie-chart-row" style={{ alignItems: 'flex-start', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        <svg 
-          viewBox={`0 0 ${size} ${size}`} 
-          width={size} 
-          height={size}
-          style={{ cursor: onClick ? 'pointer' : 'default' }}
-        >
-          {donut && total > 0 && (
-            <text 
-              x={cx} 
-              y={cy} 
-              textAnchor="middle" 
-              dominantBaseline="middle" 
-              style={{ 
-                fontSize: '14px', 
-                fontWeight: '700', 
-                fill: 'var(--text-primary)', 
-                fontFamily: 'var(--font-family)' 
-              }}
-            >
-              {total}
-            </text>
-          )}
-          {arcs.map((arc, index) => (
-            <path 
-              key={`${arc.label}-${index}`}
-              d={arc.path} 
-              fill={arc.color} 
-              stroke="white" 
-              strokeWidth={2} 
-              opacity={0.9}
-              onClick={() => onClick?.(arc.label)}
-              style={{ 
-                cursor: onClick ? 'pointer' : 'default',
-                transition: 'opacity 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.setAttribute('opacity', '1')
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.setAttribute('opacity', '0.9')
-              }}
-            />
-          ))}
-          <defs>
-            <filter id="pie-shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="rgba(0,0,0,0.1)"/>
-            </filter>
-          </defs>
-        </svg>
-        
-        {/* Legend */}
-        <ul className="chart-legend" style={{ margin: 0 }}>
-          {arcs.map((arc, index) => (
-            <li 
-              key={`${arc.label}-legend`}
-              onClick={() => onClick?.(arc.label)}
-              style={{ 
-                cursor: onClick ? 'pointer' : 'default',
-                padding: '4px 0',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}
-            >
-              <span 
-                className="chart-legend-swatch" 
-                style={{ 
-                  background: arc.color,
-                  width: '12px',
-                  height: '12px',
-                  borderRadius: '3px',
-                  display: 'inline-block',
-                  border: '1px solid rgba(0,0,0,0.1)'
-                }} 
-              />
-              <span className="chart-legend-label" style={{ fontSize: '12px' }}>
-                {arc.label.length > 25 ? `${arc.label.substring(0, 22)}...` : arc.label}
-              </span>
-              <span className="chart-legend-value" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                {arc.value} ({arc.pct.toFixed(0)}%)
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+    <div style={{ width: '100%', height: '100%', minHeight: 280, minWidth: 0 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RPieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="label"
+            innerRadius={donut ? '50%' : 0}
+            outerRadius="80%"
+            paddingAngle={data.length > 1 ? 2 : 0}
+            onClick={(entry: unknown) => {
+              const d = entry as BarDatum
+              if (d?.label) onClick?.(d.label)
+            }}
+            cursor={onClick ? 'pointer' : 'default'}
+            label={({ percent }: { percent?: number }) => `${Math.round((percent ?? 0) * 100)}%`}
+            labelLine={false}
+          >
+            {data.map((d, i) => (
+              <Cell key={d.label} fill={d.color ?? colors[i % colors.length]} stroke="var(--bg-primary)" strokeWidth={2} />
+            ))}
+          </Pie>
+          <Tooltip content={<ChartTooltip />} />
+          <Legend
+            layout="vertical"
+            verticalAlign="middle"
+            align="right"
+            iconType="circle"
+            iconSize={10}
+            formatter={(value: string) => {
+              const truncated = value.length > 28 ? `${value.slice(0, 25)}...` : value
+              return <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{truncated}</span>
+            }}
+          />
+        </RPieChart>
+      </ResponsiveContainer>
     </div>
   )
 }
@@ -280,78 +187,79 @@ export type TreemapNode = {
   color?: string;
 }
 
-type LaidOutRect = {
-  name: string;
-  value: number;
-  depth: number;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  color?: string;
-}
-
-function layoutTreemap(
-  nodes: TreemapNode[],
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  depth: number,
-  out: LaidOutRect[],
-  colors: string[]
-) {
-  const total = nodes.reduce((sum, n) => sum + Math.max(n.value, 0.0001), 0)
-  if (total <= 0 || w <= 0 || h <= 0) return
-  
-  const horizontal = w >= h
-  let offset = 0
-  
-  for (const node of nodes) {
-    const share = Math.max(node.value, 0.0001) / total
-    const nodeColor = node.color ?? colors[depth % colors.length]
-    
-    if (horizontal) {
-      const nodeW = w * share
-      out.push({ 
-        name: node.name, 
-        value: node.value, 
-        depth, 
-        x: x + offset, 
-        y, 
-        w: nodeW, 
-        h,
-        color: nodeColor
-      })
-      if (node.children?.length) {
-        layoutTreemap(node.children, x + offset, y, nodeW, h, depth + 1, out, colors)
-      }
-      offset += nodeW
-    } else {
-      const nodeH = h * share
-      out.push({
+// Flatten our nested TreemapNode shape into recharts' expected format,
+// assigning each LEAF a color (recharts treemap colors leaves, not
+// intermediate groups, which is what avoids the old bug where a parent's
+// label was drawn directly under/behind its children's labels).
+function toRechartsTree(nodes: TreemapNode[], depth: number, colors: string[]): Array<Record<string, unknown>> {
+  return nodes.map((node, i) => {
+    if (node.children?.length) {
+      return {
         name: node.name,
-        value: node.value,
-        depth,
-        x,
-        y: y + offset,
-        w,
-        h: nodeH,
-        color: nodeColor
-      })
-      if (node.children?.length) {
-        layoutTreemap(node.children, x, y + offset, w, nodeH, depth + 1, out, colors)
+        children: toRechartsTree(node.children, depth + 1, colors)
       }
-      offset += nodeH
     }
-  }
+    return {
+      name: node.name,
+      size: Math.max(node.value, 0.0001),
+      actualValue: node.value,
+      fill: node.color ?? colors[(depth * 3 + i) % colors.length]
+    }
+  })
 }
 
-// Enhanced Treemap with responsive sizing and better visibility
+type TreemapContentProps = {
+  x?: number; y?: number; width?: number; height?: number
+  name?: string; actualValue?: number; fill?: string; depth?: number
+}
+
+function TreemapCell({ x = 0, y = 0, width = 0, height = 0, name, actualValue, fill, depth }: TreemapContentProps) {
+  const isLeaf = depth === undefined || depth >= 1
+  const showLabel = width > 46 && height > 24
+  const showValue = width > 46 && height > 40 && actualValue !== undefined
+  return (
+    <g>
+      <rect
+        x={x} y={y} width={width} height={height}
+        style={{
+          fill: isLeaf ? (fill || 'var(--brand-400)') : 'transparent',
+          stroke: 'var(--bg-primary)',
+          strokeWidth: 2,
+        }}
+        rx={3}
+      />
+      {showLabel && (
+        <text
+          x={x + 8}
+          y={y + 18}
+          fontSize={12}
+          fontWeight={700}
+          fill="#ffffff"
+          style={{ fontFamily: 'var(--font-family)', pointerEvents: 'none' }}
+        >
+          {name && name.length > Math.floor(width / 7) ? `${name.slice(0, Math.max(3, Math.floor(width / 7) - 1))}...` : name}
+        </text>
+      )}
+      {showValue && (
+        <text
+          x={x + 8}
+          y={y + 34}
+          fontSize={11}
+          fill="rgba(255,255,255,0.85)"
+          style={{ fontFamily: 'var(--font-family)', pointerEvents: 'none' }}
+        >
+          {actualValue}
+        </text>
+      )}
+    </g>
+  )
+}
+
+// Treemap — delegates layout to recharts (squarified algorithm), which
+// only draws leaf rectangles with labels, instead of the old approach
+// that drew every ancestor's rectangle AND label on top of its children's.
 export function Treemap({
   data,
-  width: containerWidth = 800,
-  height: containerHeight = 480,
   onClick,
   colors = CHART_COLORS
 }: {
@@ -361,98 +269,25 @@ export function Treemap({
   onClick?: (name: string) => void;
   colors?: string[];
 }) {
-  // Calculate actual dimensions
-  const actualWidth = typeof containerWidth === 'number' ? containerWidth : 800
-  const actualHeight = typeof containerHeight === 'number' ? containerHeight : 480
-  
-  const rects: LaidOutRect[] = []
-  layoutTreemap(data, 0, 0, actualWidth, actualHeight, 0, rects, colors)
-  
-  const maxDepth = rects.reduce((max, r) => Math.max(max, r.depth), 0)
-  
-  if (!rects.length) return null
-  
+  const tree = useMemo(() => toRechartsTree(data, 0, colors), [data, colors])
+  if (!tree.length) return null
+
   return (
-    <svg 
-      viewBox={`0 0 ${actualWidth} ${actualHeight}`} 
-      width="100%" 
-      height="100%" 
-      style={{ 
-        minWidth: actualWidth,
-        minHeight: actualHeight,
-        borderRadius: 'var(--radius-lg)',
-        cursor: onClick ? 'pointer' : 'default'
-      }}
-    >
-      <defs>
-        <filter id="treemap-shadow" x="0" y="0" width="100%" height="100%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="rgba(0,0,0,0.1)"/>
-        </filter>
-      </defs>
-      {rects.map((r, i) => {
-        const isLeafDepth = r.depth === maxDepth
-        const bgColor = isLeafDepth ? (r.color || colors[i % colors.length]) : 'transparent'
-        const borderColor = isLeafDepth ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.1)'
-        
-        return (
-          <g key={`${r.name}-${i}`} onClick={() => onClick?.(r.name)} style={{ cursor: onClick ? 'pointer' : 'default' }}>
-            <rect 
-              x={r.x} 
-              y={r.y} 
-              width={Math.max(0, r.w - 1)} 
-              height={Math.max(0, r.h - 1)} 
-              fill={bgColor} 
-              fillOpacity={isLeafDepth ? 0.85 : 0.3} 
-              stroke={borderColor} 
-              strokeWidth={1} 
-              filter="url(#treemap-shadow)"
-              rx={4}
-            />
-            <rect 
-              x={r.x} 
-              y={r.y} 
-              width={Math.max(0, r.w - 1)} 
-              height={Math.max(0, r.h - 1)} 
-              fill="transparent" 
-              stroke="transparent" 
-              className="treemap-hover-area" 
-              rx={4}
-            />
-            {/* Label - adjusted for better visibility */}
-            {r.w > 40 && r.h > 20 && (
-              <text 
-                x={r.x + 8} 
-                y={r.y + 16} 
-                className="treemap-label" 
-                style={{ 
-                  fontFamily: 'var(--font-family)', 
-                  fontSize: Math.min(11, r.h / 2) + 'px',
-                  fontWeight: '600',
-                  fill: isLeafDepth ? '#ffffff' : 'var(--text-primary)'
-                }}
-              >
-                {r.name.length > 20 ? `${r.name.substring(0, 17)}...` : r.name}
-              </text>
-            )}
-            {/* Value - adjusted for better visibility */}
-            {r.w > 40 && r.h > 30 && (
-              <text 
-                x={r.x + 8} 
-                y={r.y + 28} 
-                style={{ 
-                  fontFamily: 'var(--font-family)', 
-                  fontSize: Math.min(10, r.h / 3) + 'px',
-                  fill: isLeafDepth ? 'rgba(255,255,255,0.8)' : 'var(--text-muted)',
-                  fontWeight: '400'
-                }}
-              >
-                {r.value}
-              </text>
-            )}
-          </g>
-        )
-      })}
-    </svg>
+    <div style={{ width: '100%', height: '100%', minHeight: 320, minWidth: 0 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RTreemap
+          data={tree}
+          dataKey="size"
+          aspectRatio={4 / 3}
+          stroke="var(--bg-primary)"
+          content={<TreemapCell />}
+          onClick={(node: unknown) => {
+            const n = node as { name?: string }
+            if (n?.name) onClick?.(n.name)
+          }}
+        />
+      </ResponsiveContainer>
+    </div>
   )
 }
 
@@ -460,10 +295,10 @@ export type DendroNode =
   | { type: 'leaf'; id: number; label: string; color?: string }
   | { type: 'node'; height: number; left: DendroNode; right: DendroNode; color?: string }
 
-// Enhanced Dendrogram with better rendering
+// Dendrogram — recharts has no equivalent, so this stays hand-rolled SVG,
+// but wrapped for responsive width the same way the other charts are now.
 export function Dendrogram({
   tree,
-  width: containerWidth = 700,
   colors = CHART_COLORS
 }: {
   tree: DendroNode | null;
@@ -471,9 +306,7 @@ export function Dendrogram({
   colors?: string[];
 }) {
   if (!tree) return null
-  
-  const actualWidth = typeof containerWidth === 'number' ? containerWidth : 700
-  
+
   const leaves: { id: number; label: string; color?: string }[] = []
   const collectLeaves = (n: DendroNode) => {
     if (n.type === 'leaf') {
@@ -484,34 +317,33 @@ export function Dendrogram({
     }
   }
   collectLeaves(tree)
-  
-  const rowHeight = 28
-  const height = Math.max(rowHeight, leaves.length * rowHeight)
+
+  const rowHeight = 32
+  const height = Math.max(rowHeight, leaves.length * rowHeight) + 16
   const labelWidth = 200
-  const treeWidth = actualWidth - labelWidth - 30
-  
+  const treeWidth = 320
+
   const maxHeight = tree.type === 'node' ? tree.height : 1
-  
-  const positions = new Map<DendroNode, { x: number; y: number; node: DendroNode }>()
+
+  const positions = new Map<DendroNode, { x: number; y: number }>()
   let leafIndex = 0
-  
-  const place = (n: DendroNode): { x: number; y: number; node: DendroNode } => {
+
+  const place = (n: DendroNode): { x: number; y: number } => {
     if (n.type === 'leaf') {
-      const pos = { x: 0, y: leafIndex * rowHeight + rowHeight / 2, node: n }
-      leafIndex++
+      const pos = { x: 0, y: leafIndex * rowHeight + rowHeight / 2 + 8 }
+      leafIndex += 1
       positions.set(n, pos)
       return pos
     }
     const left = place(n.left)
     const right = place(n.right)
     const x = maxHeight > 0 ? (n.height / maxHeight) * treeWidth : treeWidth
-    const pos = { x, y: (left.y + right.y) / 2, node: n }
+    const pos = { x, y: (left.y + right.y) / 2 }
     positions.set(n, pos)
     return pos
   }
-  
   place(tree)
-  
+
   const lines: Array<{ x1: number; y1: number; x2: number; y2: number }> = []
   const walkLines = (n: DendroNode) => {
     if (n.type === 'leaf') return
@@ -525,75 +357,48 @@ export function Dendrogram({
     walkLines(n.right)
   }
   walkLines(tree)
-  
+
+  const totalWidth = labelWidth + treeWidth + 30
+
   return (
-    <svg 
-      viewBox={`0 0 ${actualWidth} ${height}`} 
-      width="100%" 
-      style={{ height, minWidth: actualWidth }}
-    >
-      <defs>
-        <marker 
-          id="arrowhead" 
-          markerWidth="10" 
-          markerHeight="7" 
-          refX="9" 
-          refY="3.5" 
-          orient="auto"
-        >
-          <polygon points="0 0, 10 3.5, 0 7" fill="var(--border-dark)"/>
-        </marker>
-      </defs>
-      
-      {/* Dendrogram lines */}
-      <g transform={`translate(${labelWidth + 10}, 0)`}>
-        {lines.map((line, i) => (
-          <line 
-            key={i} 
-            x1={line.x1} 
-            y1={line.y1} 
-            x2={line.x2} 
-            y2={line.y2} 
-            stroke="var(--border-medium)" 
-            strokeWidth={1.5} 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          />
-        ))}
-      </g>
-      
-      {/* Leaf labels */}
-      {leaves.map((leaf, i) => {
-        const leafColor = leaf.color ?? colors[i % colors.length]
-        return (
-          <g key={leaf.id}>
-            <text 
-              x={labelWidth - 8} 
-              y={i * rowHeight + rowHeight / 2 + 4} 
-              textAnchor="end" 
-              className="chart-label" 
-              style={{ 
-                fontFamily: 'var(--font-family)', 
-                fontSize: '12px', 
-                fill: 'var(--text-secondary)' 
-              }}
-            >
-              {leaf.label.length > 25 ? `${leaf.label.substring(0, 22)}...` : leaf.label}
-            </text>
-            <circle 
-              cx={labelWidth + 5} 
-              cy={i * rowHeight + rowHeight / 2} 
-              r={4} 
-              fill={leafColor} 
-              stroke="white" 
-              strokeWidth={1}
+    <div style={{ width: '100%', overflowX: 'auto' }}>
+      <svg viewBox={`0 0 ${totalWidth} ${height}`} width="100%" style={{ height, minWidth: totalWidth }}>
+        <g transform={`translate(${labelWidth + 10}, 0)`}>
+          {lines.map((line, i) => (
+            <line
+              key={i}
+              x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2}
+              stroke="var(--border-medium)"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
             />
-          </g>
-        )
-      })}
-    </svg>
+          ))}
+        </g>
+        {leaves.map((leaf, i) => {
+          const leafColor = leaf.color ?? colors[i % colors.length]
+          return (
+            <g key={leaf.id}>
+              <text
+                x={labelWidth - 8}
+                y={i * rowHeight + rowHeight / 2 + 12}
+                textAnchor="end"
+                style={{ fontFamily: 'var(--font-family)', fontSize: '12px', fill: 'var(--text-secondary)' }}
+              >
+                {leaf.label.length > 25 ? `${leaf.label.substring(0, 22)}...` : leaf.label}
+              </text>
+              <circle
+                cx={labelWidth + 5}
+                cy={i * rowHeight + rowHeight / 2 + 8}
+                r={4}
+                fill={leafColor}
+                stroke="var(--bg-primary)"
+                strokeWidth={1}
+              />
+            </g>
+          )
+        })}
+      </svg>
+    </div>
   )
 }
-
-// Export all chart types
-export { CHART_COLORS, CHART_COLORS_LIGHT, colorFor, colorForLight }

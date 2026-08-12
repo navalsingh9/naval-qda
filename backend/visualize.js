@@ -156,10 +156,22 @@ function buildDistanceMatrix(vectors) {
       } else {
         const a = vectors[i].vector;
         const b = vectors[j].vector;
-        const union = new Set([...a, ...b]);
-        const intersection = a.filter((value, index) => value > 0 && b[index] > 0).length;
-        const unionSize = union.size;
-        distanceMatrix[i][j] = unionSize === 0 ? 0 : 1 - intersection / unionSize;
+        // Jaccard distance over the shared vocabulary: a and b are
+        // per-term counts/presence flags in the SAME term order, so
+        // "union"/"intersection" must be computed positionally (which
+        // vocabulary slots are non-zero in either vector) — not via
+        // `new Set([...a, ...b])`, which collapses the raw numeric
+        // values instead (e.g. counts of 0/1/2/3) and has nothing to
+        // do with how many terms the two items actually share.
+        let intersection = 0;
+        let union = 0;
+        for (let k = 0; k < a.length; k += 1) {
+          const inA = a[k] > 0;
+          const inB = b[k] > 0;
+          if (inA && inB) intersection += 1;
+          if (inA || inB) union += 1;
+        }
+        distanceMatrix[i][j] = union === 0 ? 0 : 1 - intersection / union;
       }
     }
   }

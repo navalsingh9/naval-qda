@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useProjectStore } from '../stores/useProjectStore'
 import { useNodeStore } from '../stores/useNodeStore'
 import { MediaPlayer } from './MediaPlayer'
@@ -43,7 +43,7 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null)
   // Where to anchor the floating "pick a node" toolbar, in coordinates
   // relative to the scrollable content frame (so it stays put on scroll).
-  const [toolbarPos, setToolbarPos] = useState<{ top: number; left: number } | null>(null)
+  const [toolbarPos, setToolbarPos] = useState<{ top: number; left: number; openDownward: boolean } | null>(null)
   const [nodeFilter, setNodeFilter] = useState('')
   const [coderId, setCoderId] = useState<number | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -177,14 +177,18 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
 
     // Anchor the toolbar just above the selection — right where the user is
     // already looking — instead of making them scroll down to a panel
-    // fixed at the bottom of the page.
+    // fixed at the bottom of the page. But if the selection is near the
+    // top of the scrollable frame, there isn't room above it, so flip the
+    // popover to open downward instead of letting it clip off-screen.
     const selectionRect = range.getBoundingClientRect()
     const frameRect = frame.getBoundingClientRect()
     const top = selectionRect.top - frameRect.top + frame.scrollTop
     const left = selectionRect.left - frameRect.left + selectionRect.width / 2
+    const spaceAbove = selectionRect.top - frameRect.top
+    const openDownward = spaceAbove < 220
 
     setSelectionRange({ start: selectionStart, end: selectionEnd })
-    setToolbarPos({ top, left })
+    setToolbarPos({ top, left, openDownward })
     setNodeFilter('')
     requestAnimationFrame(() => searchInputRef.current?.focus())
   }
@@ -275,6 +279,15 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
                         ? `${getNodeColor(segment.coveringNodes[0].node_id)}40`  // 25% opacity
                         : 'repeating-linear-gradient(135deg, transparent 0 4px, rgba(139, 92, 246, 0.2) 4px 8px)'
 
+                    // The active search/navigation highlight (.highlight) used to
+                    // always render in a fixed blue regardless of which node the
+                    // text belongs to. Pass the node's own color through as a CSS
+                    // variable so the highlight accent matches — e.g. a segment
+                    // coded under a green node gets a green highlight, not blue.
+                    const highlightColor = segment.coveringNodes.length
+                      ? getNodeColor(segment.coveringNodes[0].node_id)
+                      : undefined
+
                     return (
                       <span
                         key={`${segment.start}-${segment.end}`}
@@ -283,7 +296,8 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
                           background,
                           padding: '0 2px',
                           borderRadius: '2px',
-                          transition: 'background 0.2s ease'
+                          transition: 'background 0.2s ease',
+                          ...(highlightColor ? { '--highlight-color': highlightColor } as CSSProperties : {})
                         }}
                         title={segment.coveringNodes.length ? segment.coveringNodes.map((c) => flattenedNodes.find((n) => n.id === c.node_id)?.name ?? '').filter(Boolean).join(', ') : undefined}
                       >
@@ -297,7 +311,7 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
               {selectionRange && toolbarPos ? (
                 <div
                   ref={toolbarRef}
-                  className="code-popover"
+                  className={`code-popover${toolbarPos.openDownward ? ' code-popover-below' : ''}`}
                   style={{ top: toolbarPos.top, left: toolbarPos.left }}
                 >
                   <input

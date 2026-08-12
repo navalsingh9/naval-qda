@@ -136,7 +136,7 @@ export function SimilarityClusterPanel() {
                     return (
                       <td
                         key={`${label}-${labels[columnIndex]}`}
-                        style={{ backgroundColor: `rgba(76, 110, 245, ${0.1 + Math.max(0, opacity) * 0.8})` }}
+                        style={{ backgroundColor: `rgba(18, 100, 163, ${0.08 + Math.max(0, opacity) * 0.75})` }}
                       >
                         {similarity.toFixed(2)}
                       </td>
@@ -149,6 +149,28 @@ export function SimilarityClusterPanel() {
           <p className="description">
             Cells show similarity (1 − distance) between each pair of sources by {mode === 'word' ? 'shared vocabulary' : 'shared coding pattern'}; darker means more similar.
           </p>
+          <details className="similarity-math">
+            <summary>How is this number calculated?</summary>
+            <div className="similarity-math-body">
+              <p>
+                Each source is turned into a vector over a shared vocabulary — for <strong>Word usage</strong> mode,
+                one slot per distinct word that appears in any source; for <strong>Coding pattern</strong> mode, one
+                slot per node, counting how often each source was coded to it.
+              </p>
+              <p>
+                The distance between two sources is the <strong>Jaccard distance</strong>: for every vocabulary slot,
+                count it as shared if BOTH sources have a non-zero value there. Then:
+              </p>
+              <pre className="similarity-formula">distance = 1 − (slots present in both) / (slots present in either)</pre>
+              <p>
+                The table shows <strong>similarity = 1 − distance</strong>, so 1.00 means the two sources share every
+                vocabulary slot either of them uses, and 0.00 means they share none. The diagonal is always 1.00
+                because every source is identical to itself. This measures <em>overlap in which terms/nodes are used
+                at all</em> — it does not weigh how often, so two sources that each use very different vocabulary
+                will always score low even if both are long and detailed.
+              </p>
+            </div>
+          </details>
         </div>
       ) : !loading ? (
         <p className="description">Run clustering to compare sources by shared vocabulary or coding pattern.</p>

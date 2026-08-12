@@ -4,8 +4,8 @@ import { SidebarLayout } from './components/SidebarLayout'
 import { CodingWorkspacePage } from './components/CodingWorkspacePage'
 import { ProjectSourcePage } from './components/ProjectSourcePage'
 import { QueryWorkspacePage } from './components/QueryWorkspacePage'
-import { VisualizationsPage } from './components/VisualizationsPage'
 import { VisualizationDashboard } from './components/VisualizationDashboard'
+import { SimilarityPage } from './components/SimilarityPage'
 import { AiSettingsPanel } from './components/AiSettingsPanel'
 import { ReportsPage } from './components/ReportsPage'
 
@@ -19,6 +19,7 @@ function App() {
           <Route path="/coding" element={<CodingWorkspacePage />} />
           <Route path="/query" element={<QueryWorkspacePage />} />
           <Route path="/visualizations" element={<VisualizationDashboard />} />
+          <Route path="/similarity" element={<SimilarityPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/ai" element={<AiSettingsPanel />} />
         </Route>
