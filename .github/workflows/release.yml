@@ -6,6 +6,12 @@ on:
       - 'v*'
   workflow_dispatch:
 
+# Least-privilege default: most jobs here only read the repo and upload a
+# build artifact, so they get read-only access unless a job explicitly
+# needs more (the release job below overrides this with contents: write).
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
