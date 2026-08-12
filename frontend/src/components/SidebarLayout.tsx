@@ -293,7 +293,7 @@ export function SidebarLayout() {
             textAlign: 'center'
           }}
         >
-          v{import.meta.env.VITE_APP_VERSION || '0.4.8'}
+          v{import.meta.env.VITE_APP_VERSION || '—'}
         </div>
         <div 
           className="sidebar-resize-handle"
