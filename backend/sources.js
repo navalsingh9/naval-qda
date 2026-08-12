@@ -39,6 +39,22 @@ function extractTextFromTxt(filePath) {
   return fs.readFileSync(filePath, 'utf8');
 }
 
+// Word's document.xml uses standard XML escaping for characters like
+// apostrophes and quotes inside text runs (e.g. "wasn&apos;t"). Stripping
+// tags alone leaves those entity codes as literal text in the extracted
+// content — this decodes the predefined XML entities plus numeric
+// character references (both decimal &#39; and hex &#x27; forms).
+function decodeXmlEntities(text) {
+  return text
+    .replace(/&#x([0-9a-fA-F]+);/g, (_match, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_match, dec) => String.fromCodePoint(parseInt(dec, 10)))
+    .replace(/&apos;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&'); // must run last so it doesn't re-decode entities produced above
+}
+
 function extractTextFromDocx(filePath) {
   const zip = require('yauzl');
   const xml = [];
@@ -64,7 +80,7 @@ function extractTextFromDocx(filePath) {
               content += chunk.toString('utf8');
             });
             stream.on('end', () => {
-              const text = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+              const text = decodeXmlEntities(content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
               resolve(text);
               zipFile.close();
             });

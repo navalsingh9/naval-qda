@@ -112,6 +112,15 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
     void loadCodings()
   }, [sourceId])
 
+  const refreshCodings = async () => {
+    try {
+      const data = await window.api.coding.getCodingsForSource(sourceId, {})
+      setCodings((data as CodingRecord[]) ?? [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    }
+  }
+
   const spans = useMemo(() => {
     if (!source?.content) return []
 
@@ -205,6 +214,11 @@ export function SourceTextViewer({ sourceId, onSelectionCoded, highlightOffset, 
       })
       closeToolbar()
       window.getSelection()?.removeAllRanges()
+      // The applied coding needs to actually show up as a highlight right
+      // away — without this, `codings` (and the highlight spans computed
+      // from it) stay stale until the source is reopened, even though the
+      // node tree's coding count updates fine since that's a separate fetch.
+      await refreshCodings()
       onSelectionCoded?.(nodeId)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
