@@ -195,13 +195,66 @@ function percentCoded(sourceId) {
   return covered / contentLength;
 }
 
+function renameNode(nodeId, name) {
+  const db = getDatabase();
+  const trimmed = typeof name === 'string' ? name.trim() : '';
+  if (!trimmed) {
+    throw new Error('Node name cannot be empty.');
+  }
+
+  const node = db.prepare('SELECT id FROM nodes WHERE id = ?').get(nodeId);
+  if (!node) {
+    throw new Error('Node not found.');
+  }
+
+  db.prepare('UPDATE nodes SET name = ? WHERE id = ?').run(trimmed, nodeId);
+  return { id: nodeId, name: trimmed };
+}
+
+function deleteNode(nodeId, { cascade = false } = {}) {
+  const db = getDatabase();
+  const node = db.prepare('SELECT id FROM nodes WHERE id = ?').get(nodeId);
+  if (!node) {
+    throw new Error('Node not found.');
+  }
+
+  const collectDescendantIds = (id) => {
+    const children = db.prepare('SELECT id FROM nodes WHERE parent_id = ?').all(id);
+    return children.reduce((ids, child) => [...ids, child.id, ...collectDescendantIds(child.id)], []);
+  };
+  const descendantIds = collectDescendantIds(nodeId);
+
+  if (descendantIds.length > 0 && !cascade) {
+    throw new Error(
+      `This node has ${descendantIds.length} child node(s). Delete or move them first, or pass cascade to delete the whole subtree.`
+    );
+  }
+
+  const idsToDelete = [nodeId, ...descendantIds];
+  // Delete children before their parent — collectDescendantIds always lists
+  // a node before its own descendants, so reversing guarantees every child
+  // is removed before the parent row it points to via parent_id.
+  const deletionOrder = [...idsToDelete].reverse();
+  const deleteMany = db.transaction((ids) => {
+    for (const id of ids) {
+      db.prepare('DELETE FROM codings WHERE node_id = ?').run(id);
+      db.prepare('DELETE FROM nodes WHERE id = ?').run(id);
+    }
+  });
+  deleteMany(deletionOrder);
+
+  return { deletedNodeIds: idsToDelete };
+}
+
 module.exports = {
   applyCoding,
   createNode,
+  deleteNode,
   getCodingsForSource,
   getNodeTree,
   mergeNodes,
   moveNode,
   percentCoded,
   removeCoding,
+  renameNode,
 };

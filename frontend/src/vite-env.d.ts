@@ -14,12 +14,14 @@ declare global {
       coding: {
         apply: (payload: unknown) => Promise<unknown>
         createNode: (payload: unknown) => Promise<unknown>
+        deleteNode: (nodeId: number, options?: { cascade?: boolean }) => Promise<unknown>
         getCodingsForSource: (sourceId: number, options?: unknown) => Promise<unknown>
         getNodeTree: (projectId: number, aggregate?: boolean) => Promise<unknown>
         mergeNodes: (sourceNodeId: number, targetNodeId: number) => Promise<unknown>
         moveNode: (nodeId: number, newParentId: number | null) => Promise<unknown>
         percentCoded: (sourceId: number) => Promise<unknown>
         remove: (codingId: number) => Promise<unknown>
+        renameNode: (nodeId: number, name: string) => Promise<unknown>
       }
       memos: {
         create: (payload: unknown) => Promise<unknown>

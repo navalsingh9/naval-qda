@@ -20,12 +20,14 @@ contextBridge.exposeInMainWorld('api', {
   coding: {
     apply: (payload) => ipcRenderer.invoke('coding:apply', payload),
     createNode: (payload) => ipcRenderer.invoke('coding:createNode', payload),
+    deleteNode: (nodeId, options) => ipcRenderer.invoke('coding:deleteNode', nodeId, options),
     getCodingsForSource: (sourceId, options) => ipcRenderer.invoke('coding:getCodingsForSource', sourceId, options),
     getNodeTree: (projectId, aggregate) => ipcRenderer.invoke('coding:getNodeTree', projectId, aggregate),
     mergeNodes: (sourceNodeId, targetNodeId) => ipcRenderer.invoke('coding:mergeNodes', sourceNodeId, targetNodeId),
     moveNode: (nodeId, newParentId) => ipcRenderer.invoke('coding:moveNode', nodeId, newParentId),
     percentCoded: (sourceId) => ipcRenderer.invoke('coding:percentCoded', sourceId),
     remove: (codingId) => ipcRenderer.invoke('coding:remove', codingId),
+    renameNode: (nodeId, name) => ipcRenderer.invoke('coding:renameNode', nodeId, name),
   },
   memos: {
     create: (payload) => ipcRenderer.invoke('memos:create', payload),

@@ -15,9 +15,17 @@ type NodeStore = {
   error: string | null
   loadTree: (projectId: number) => Promise<void>
   createNode: (payload: { projectId: number; name: string; parentId?: number | null }) => Promise<void>
+  renameNode: (nodeId: number, name: string) => Promise<void>
+  deleteNode: (nodeId: number, options?: { cascade?: boolean }) => Promise<void>
   moveNode: (nodeId: number, newParentId: number | null) => Promise<void>
   mergeNodes: (sourceNodeId: number, targetNodeId: number) => Promise<void>
   clearError: () => void
+}
+
+// Finds which project a node tree belongs to without requiring every
+// caller to already know/pass it — same lookup moveNode/mergeNodes rely on.
+function findProjectIdForTree(tree: NodeTreeItem[]): number | undefined {
+  return tree[0]?.projectId
 }
 
 export const useNodeStore = create<NodeStore>((set) => ({
@@ -40,6 +48,35 @@ export const useNodeStore = create<NodeStore>((set) => ({
       await useNodeStore.getState().loadTree(payload.projectId)
     } catch (error) {
       set({ error: error instanceof Error ? error.message : String(error), loading: false })
+    }
+  },
+  renameNode: async (nodeId, name) => {
+    set({ loading: true, error: null })
+    try {
+      await window.api.coding.renameNode(nodeId, name)
+      const projectId = findProjectIdForTree(useNodeStore.getState().tree)
+      if (projectId) {
+        await useNodeStore.getState().loadTree(projectId)
+      } else {
+        set({ loading: false })
+      }
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error), loading: false })
+    }
+  },
+  deleteNode: async (nodeId, options) => {
+    set({ loading: true, error: null })
+    try {
+      await window.api.coding.deleteNode(nodeId, options)
+      const projectId = findProjectIdForTree(useNodeStore.getState().tree)
+      if (projectId) {
+        await useNodeStore.getState().loadTree(projectId)
+      } else {
+        set({ loading: false })
+      }
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : String(error), loading: false })
+      throw error
     }
   },
   moveNode: async (nodeId, newParentId) => {

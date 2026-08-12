@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { initializeDatabase, getDatabase } = require('../backend/db');
 const { getSourceById, importSourceFile } = require('../backend/sources');
-const { applyCoding, createNode, getCodingsForSource, getNodeTree, mergeNodes, moveNode, percentCoded, removeCoding } = require('../backend/coding');
+const { applyCoding, createNode, deleteNode, getCodingsForSource, getNodeTree, mergeNodes, moveNode, percentCoded, removeCoding, renameNode } = require('../backend/coding');
 const {
   createMemo,
   updateMemo,
@@ -123,12 +123,14 @@ ipcMain.handle('sources:importMedia', (_event, { projectId, title, filePath }) =
 
 ipcMain.handle('coding:apply', (_event, payload) => applyCoding(payload));
 ipcMain.handle('coding:createNode', (_event, payload) => createNode(payload));
+ipcMain.handle('coding:deleteNode', (_event, nodeId, options) => deleteNode(nodeId, options));
 ipcMain.handle('coding:getCodingsForSource', (_event, sourceId, options) => getCodingsForSource(sourceId, options));
 ipcMain.handle('coding:getNodeTree', (_event, projectId, aggregate) => getNodeTree(projectId, aggregate));
 ipcMain.handle('coding:mergeNodes', (_event, sourceNodeId, targetNodeId) => mergeNodes(sourceNodeId, targetNodeId));
 ipcMain.handle('coding:moveNode', (_event, nodeId, newParentId) => moveNode(nodeId, newParentId));
 ipcMain.handle('coding:percentCoded', (_event, sourceId) => percentCoded(sourceId));
 ipcMain.handle('coding:remove', (_event, codingId) => removeCoding(codingId));
+ipcMain.handle('coding:renameNode', (_event, nodeId, name) => renameNode(nodeId, name));
 
 ipcMain.handle('memos:create', (_event, payload) => createMemo(payload));
 ipcMain.handle('memos:update', (_event, memoId, payload) => updateMemo(memoId, payload));

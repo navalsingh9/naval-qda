@@ -2,7 +2,7 @@
 
 **NAVAL-QDA** is a desktop application for qualitative data analysis (QDA) — import interview transcripts, documents, and media, code them against a hierarchical node tree, run text/coding queries, visualize patterns, and generate reports, all from a local Electron + React app.
 
-> Status: early / pre-release (`v0.1.0`). APIs and schema may change without notice.
+> Status: early / pre-release. See [Releases](https://github.com/navalsingh9/naval-qda/releases) for the current version. APIs and schema may change without notice.
 
 ## Features
 

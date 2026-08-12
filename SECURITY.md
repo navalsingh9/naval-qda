@@ -4,11 +4,9 @@ NAVAL-QDA is an Electron desktop application that runs entirely on the user's ma
 
 ## Supported versions
 
-| Version | Supported |
-|---------|-----------|
-| `0.1.x` (pre-release) | :white_check_mark: best-effort, no stability guarantees |
+Pre-1.0: only the current `main` branch and its latest tagged release receive fixes — there's no long-term support for older tags. Check the [Releases page](https://github.com/navalsingh9/naval-qda/releases) for the current version.
 
-This project has not yet reached a `1.0` release. Until then, only the `main` branch / latest tag receives fixes.
+This project has not yet reached a `1.0` release.
 
 ## Reporting a vulnerability
 
