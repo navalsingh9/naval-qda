@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useProjectStore } from '../stores/useProjectStore'
+import { stripMarkdown } from '../utils/markdown'
 
 type Suggestion = {
   name: string
@@ -76,7 +77,7 @@ export function AiSettingsPanel() {
       // as soon as it comes back instead of waiting on suggestChildCodes too,
       // so a later failure there doesn't swallow a summary that succeeded.
       const summaryResult = await window.api.ai.summarizeSource({ sourceId: firstSource.id }) as { summary: string }
-      setSummary(summaryResult.summary)
+      setSummary(stripMarkdown(summaryResult.summary))
 
       // suggestChildCodes needs a real coding node to attach suggestions
       // under — there's no fixed "first" node id, so look up whatever
@@ -90,7 +91,7 @@ export function AiSettingsPanel() {
       }
 
       const suggestionResult = await window.api.ai.suggestChildCodes({ sourceId: firstSource.id, nodeId: firstNode.id, maxSuggestions: 3 }) as Suggestion[]
-      setSuggestions(suggestionResult)
+      setSuggestions(suggestionResult.map((s) => ({ ...s, name: stripMarkdown(s.name), evidence: stripMarkdown(s.evidence) })))
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {

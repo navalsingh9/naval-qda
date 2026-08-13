@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Pencil, Trash2, Check, X, AlertTriangle } from 'lucide-react'
 import { useNodeStore } from '../stores/useNodeStore'
+import { stripMarkdown } from '../utils/markdown'
 
 type Suggestion = {
   name: string
@@ -330,7 +331,7 @@ export function NodeTreeSidebar({ projectId, selectedNodeId, onSelectNode, sourc
     setSuggestError(null)
     try {
       const result = await window.api.ai.suggestChildCodes({ sourceId, nodeId: selectedNodeId, maxSuggestions: 3 }) as Suggestion[]
-      setSuggestions(result)
+      setSuggestions(result.map((s) => ({ ...s, name: stripMarkdown(s.name), evidence: stripMarkdown(s.evidence) })))
     } catch (err) {
       setSuggestError(err instanceof Error ? err.message : String(err))
     } finally {
