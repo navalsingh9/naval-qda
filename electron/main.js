@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const { initializeDatabase, getDatabase } = require('../backend/db');
 const { getSourceById, importSourceFile } = require('../backend/sources');
@@ -44,6 +44,16 @@ function createWindow() {
   // otherwise override the title set above as soon as the page loads.
   mainWindow.on('page-title-updated', (event) => {
     event.preventDefault();
+  });
+
+  // Links to an external site (e.g. "create a Matrix account" in Comms)
+  // should open in the person's real browser, not navigate this window
+  // away from the app or spawn an unmanaged Electron child window.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      shell.openExternal(url);
+    }
+    return { action: 'deny' };
   });
 
   if (isDev) {

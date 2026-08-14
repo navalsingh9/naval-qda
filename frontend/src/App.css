@@ -2211,3 +2211,101 @@ textarea:valid {
   width: auto;
   min-width: 180px;
 }
+
+/* Comms — Matrix-backed community chat. Isolated visually and
+   functionally from the rest of the app; the offline banner here never
+   appears anywhere else since no other page depends on the network. */
+.comms-offline-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  background: var(--warning-50);
+  border: 1px solid var(--warning-200);
+  color: var(--warning-800);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+}
+
+.comms-auth-panel {
+  max-width: 480px;
+}
+
+.comms-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.comms-room-panel {
+  display: flex;
+  flex-direction: column;
+  height: 60vh;
+  min-height: 420px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.comms-message-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.comms-message {
+  max-width: 75%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+}
+
+.comms-message-meta {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+
+.comms-message-sender {
+  font-weight: var(--font-bold);
+  font-size: var(--text-xs);
+  color: var(--brand-700);
+}
+
+.comms-message-time {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.comms-message-body {
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.comms-message-file {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--brand-600);
+}
+
+.comms-composer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-primary);
+}
+
+.comms-composer input[type="text"],
+.comms-composer input:not([type]) {
+  flex: 1;
+}

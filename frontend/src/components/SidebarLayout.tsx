@@ -8,6 +8,7 @@ import {
   BarChart3,
   GitCompareArrows,
   ClipboardList,
+  MessageCircle,
   Bot,
   Microscope,
   Folder,
@@ -28,6 +29,7 @@ const navItems = [
   { to: '/visualizations', label: 'Visualizations', icon: BarChart3 },
   { to: '/similarity', label: 'Similarity', icon: GitCompareArrows },
   { to: '/reports', label: 'Reports', icon: ClipboardList },
+  { to: '/comms', label: 'Comms', icon: MessageCircle },
   { to: '/ai', label: 'AI', icon: Bot },
 ]
 

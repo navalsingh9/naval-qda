@@ -9,6 +9,7 @@ import { VisualizationDashboard } from './components/VisualizationDashboard'
 import { SimilarityPage } from './components/SimilarityPage'
 import { AiSettingsPanel } from './components/AiSettingsPanel'
 import { ReportsPage } from './components/ReportsPage'
+import { CommsPage } from './components/CommsPage'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/visualizations" element={<VisualizationDashboard />} />
           <Route path="/similarity" element={<SimilarityPage />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/comms" element={<CommsPage />} />
           <Route path="/ai" element={<AiSettingsPanel />} />
         </Route>
       </Routes>

@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Download } from 'lucide-react'
 import { useProjectStore } from '../stores/useProjectStore'
+import { buildApa7TableDocx, downloadBlob } from '../utils/apa7Export'
 
 type SummaryNode = {
   id: number
@@ -55,6 +57,34 @@ export function ProjectSummaryPanel() {
 
   const flattenedNodes = summary ? flattenNodes(summary.nodeTree) : []
 
+  const handleExportNodeTree = async () => {
+    if (!summary) return
+    const blob = await buildApa7TableDocx({
+      tableNumber: 1,
+      title: `Node Tree and Coding Counts for ${summary.projectName}`,
+      columns: ['Node', 'Coding Count'],
+      rows: flattenedNodes.map((node) => [`${'    '.repeat(node.depth)}${node.name}`, String(node.codingCount)]),
+      note: `Indentation reflects node hierarchy (child nodes are indented under their parent). Coding count reflects only that node, not its children.`,
+    })
+    downloadBlob(blob, `node-tree-${summary.projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.docx`)
+  }
+
+  const handleExportClassificationSheet = async () => {
+    if (!summary || !summary.classificationSheet.cases.length) return
+    const columns = ['Case', ...summary.classificationSheet.attributes.map((a) => a.name)]
+    const rows = summary.classificationSheet.cases.map((caseItem) => [
+      caseItem.name,
+      ...summary.classificationSheet.attributes.map((attribute) => caseItem.values[attribute.name] ?? ''),
+    ])
+    const blob = await buildApa7TableDocx({
+      tableNumber: 1,
+      title: `Case Classification Sheet for ${summary.projectName}`,
+      columns,
+      rows,
+    })
+    downloadBlob(blob, `classification-sheet-${summary.projectName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.docx`)
+  }
+
   return (
     <div className="panel">
       <div className="page-header">
@@ -80,14 +110,20 @@ export function ProjectSummaryPanel() {
 
           <h3 style={{ marginTop: '1rem' }}>Node tree</h3>
           {flattenedNodes.length ? (
-            <ul className="list">
-              {flattenedNodes.map((node) => (
-                <li key={node.id}>
-                  <strong>{'—'.repeat(node.depth)} {node.name}</strong>
-                  <span>coding count: {node.codingCount}</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="list">
+                {flattenedNodes.map((node) => (
+                  <li key={node.id}>
+                    <strong>{'—'.repeat(node.depth)} {node.name}</strong>
+                    <span>coding count: {node.codingCount}</span>
+                  </li>
+                ))}
+              </ul>
+              <button type="button" className="ghost-button" onClick={() => void handleExportNodeTree()}>
+                <Download size={14} strokeWidth={2} style={{ marginRight: '6px', verticalAlign: '-2px' }} />
+                Export as APA 7 table (.docx)
+              </button>
+            </>
           ) : (
             <p className="description">No nodes yet.</p>
           )}
@@ -128,6 +164,10 @@ export function ProjectSummaryPanel() {
                   ))}
                 </tbody>
               </table>
+              <button type="button" className="ghost-button" style={{ marginTop: 'var(--space-3)' }} onClick={() => void handleExportClassificationSheet()}>
+                <Download size={14} strokeWidth={2} style={{ marginRight: '6px', verticalAlign: '-2px' }} />
+                Export as APA 7 table (.docx)
+              </button>
             </div>
           ) : (
             <p className="description">No cases in the classification sheet yet.</p>
