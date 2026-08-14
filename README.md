@@ -16,6 +16,8 @@
 - **AI assist (optional)** — source summarization and child-code suggestions, pluggable to a Gemini-backed provider.
 - **Local-first** — project data is stored in a local SQLite database; nothing leaves your machine unless you enable the AI provider.
 
+See the [feature tour](docs/TOUR.md) for a screenshot walkthrough of the current app.
+
 ## Tech stack
 
 | Layer      | Tech                                                   |
