@@ -21,6 +21,61 @@ const HOMESERVER_URL = 'https://matrix.org'
 const COMMUNITY_ROOM_ALIAS = '#naval-qda-community:matrix.org'
 const SESSION_KEY = 'naval-qda-comms-session'
 
+const DB_NAME = 'naval-qda-comms-keys'
+const STORE_NAME = 'keys'
+const KEY_ID = 'session-key'
+
+// --- Session encryption -----------------------------------------------
+// The Matrix access token is a bearer credential, so it can't sit in
+// localStorage as plain JSON (anything that can run JS on the page could
+// read it). Instead we encrypt it with AES-GCM before it ever touches
+// localStorage, and the key itself is generated non-extractable and kept
+// in IndexedDB — it can be *used* by this origin's JS but never exported
+// as raw bytes, so even a full localStorage dump only yields ciphertext.
+
+function openKeyDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1)
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE_NAME)
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+}
+
+function idbGet(db: IDBDatabase, key: string): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(key)
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => reject(req.error)
+  })
+}
+
+function idbSet(db: IDBDatabase, key: string, value: unknown): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    tx.objectStore(STORE_NAME).put(value, key)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+}
+
+async function getSessionKey(): Promise<CryptoKey> {
+  const db = await openKeyDb()
+  const existing = await idbGet(db, KEY_ID)
+  if (existing) return existing as CryptoKey
+  const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt'])
+  await idbSet(db, KEY_ID, key)
+  return key
+}
+
+function bufToB64(buf: ArrayBuffer): string {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+}
+
+function b64ToBuf(b64: string): Uint8Array {
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0))
+}
+
 export type MatrixSession = {
   accessToken: string
   userId: string
@@ -38,23 +93,39 @@ export type CommsMessage = {
   fileName?: string
 }
 
-export function loadSession(): MatrixSession | null {
+export async function loadSession(): Promise<MatrixSession | null> {
   try {
     const raw = localStorage.getItem(SESSION_KEY)
     if (!raw) return null
-    return JSON.parse(raw) as MatrixSession
+    const { iv, data } = JSON.parse(raw) as { iv: string; data: string }
+    const key = await getSessionKey()
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: b64ToBuf(iv) as BufferSource },
+      key,
+      b64ToBuf(data) as BufferSource,
+    )
+    return JSON.parse(new TextDecoder().decode(plaintext)) as MatrixSession
   } catch {
+    // Covers: nothing stored, corrupt/tampered ciphertext, a key that no
+    // longer matches (e.g. IndexedDB was cleared independently of
+    // localStorage) — in every case the safe move is to treat it as "no
+    // session" and let the person log in again, not to throw.
     return null
   }
 }
 
-function saveSession(session: MatrixSession) {
+async function saveSession(session: MatrixSession) {
   try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+    const key = await getSessionKey()
+    const iv = crypto.getRandomValues(new Uint8Array(12))
+    const plaintext = new TextEncoder().encode(JSON.stringify(session))
+    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, plaintext)
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ iv: bufToB64(iv.buffer), data: bufToB64(ciphertext) }))
   } catch {
-    // Storage can fail (private browsing-style restrictions, quota) —
-    // login still works for this run, it just won't persist across
-    // restarts. Not worth surfacing as an error.
+    // Storage can fail (private browsing-style restrictions, quota,
+    // WebCrypto/IndexedDB unavailable) — login still works for this run,
+    // it just won't persist across restarts. Not worth surfacing as an
+    // error.
   }
 }
 
@@ -85,7 +156,7 @@ export async function loginWithPassword(username: string, password: string): Pro
       userId: result.user_id,
       deviceId: result.device_id,
     }
-    saveSession(session)
+    await saveSession(session)
     return { session }
   } catch (err) {
     return { error: describeMatrixError(err) }

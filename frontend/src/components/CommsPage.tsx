@@ -45,21 +45,23 @@ export function CommsPage() {
   }, [])
 
   useEffect(() => {
-    const session = loadSession()
-    if (!session) {
-      setPhase('loggedOut')
-      return
-    }
-    if (!isOnline()) {
-      setPhase('error')
-      setRoomError("You're offline — Comms will reconnect automatically once you're back online.")
-      return
-    }
-
     let cancelled = false
-    setPhase('connecting')
 
-    const connect = async () => {
+    const run = async () => {
+      const session = await loadSession()
+      if (cancelled) return
+      if (!session) {
+        setPhase('loggedOut')
+        return
+      }
+      if (!isOnline()) {
+        setPhase('error')
+        setRoomError("You're offline — Comms will reconnect automatically once you're back online.")
+        return
+      }
+
+      setPhase('connecting')
+
       const client = resumeClient(session)
       const result = await joinCommunityRoom(client)
       if (cancelled) return
@@ -84,7 +86,7 @@ export function CommsPage() {
       })
     }
 
-    void connect()
+    void run()
 
     return () => {
       cancelled = true
