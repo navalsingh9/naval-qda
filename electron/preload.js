@@ -92,6 +92,10 @@ contextBridge.exposeInMainWorld('api', {
     summarizeSource: (payload) => ipcRenderer.invoke('ai:summarizeSource', payload),
     suggestChildCodes: (payload) => ipcRenderer.invoke('ai:suggestChildCodes', payload),
     setSetting: (payload) => ipcRenderer.invoke('ai:setSetting', payload),
+    // Returns null for secret keys (ai.apiKey) — the renderer can no longer
+    // read a saved key back out. Use hasSetting to show "a key is saved".
     getSetting: (key) => ipcRenderer.invoke('ai:getSetting', key),
+    hasSetting: (key) => ipcRenderer.invoke('ai:hasSetting', key),
+    clearSetting: (key) => ipcRenderer.invoke('ai:clearSetting', key),
   },
 });

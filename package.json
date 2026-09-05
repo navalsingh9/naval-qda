@@ -3,8 +3,8 @@
   "version": "0.5.1",
   "description": "NAVAL-QDA desktop application for qualitative data analysis",
   "author": {
-    "name": "NAVAL-QDA",
-    "email": "support@navalqda.example"
+    "name": "Naval Singh",
+    "email": "navalsem@hotmail.com"
   },
   "private": true,
   "main": "electron/main.js",
@@ -37,5 +37,13 @@
     "nodejs-whisper": "^0.3.0",
     "pdf-parse": "^2.4.5",
     "yauzl": "^3.4.0"
+  },
+  "license": "CC-BY-NC-ND-4.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/navalsingh9/naval-qda.git"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

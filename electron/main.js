@@ -23,7 +23,7 @@ const { textSearch, wordFrequency, codingQuery, matrixCodingQuery, codingCompari
 const { wordCloudData, hierarchyChartData, codingByNodeChart, codingByAttributeChart, buildFeatureVectors, clusterByWordSimilarity, clusterByCodingSimilarity } = require('../backend/visualize');
 const { importMedia, createTranscriptionJob, updateTranscriptSegment } = require('../backend/transcribe');
 const { generateCodingReport, generateProjectSummary } = require('../backend/report');
-const { summarizeSource, suggestChildCodes, setSetting, getSetting } = require('../backend/ai');
+const { summarizeSource, suggestChildCodes, setSetting, getSettingPublic, hasSetting, clearSetting } = require('../backend/ai');
 const isDev = process.env.NODE_ENV === 'development';
 
 let mainWindow;
@@ -55,6 +55,27 @@ function createWindow() {
     }
     return { action: 'deny' };
   });
+
+  // setWindowOpenHandler above only covers *new* windows. A same-window
+  // navigation (target="_self", a scripted location assignment, a link inside
+  // imported content) would otherwise move this window off the app entirely,
+  // and whatever loaded next would inherit the preload bridge. This app ingests
+  // untrusted material by design — PDFs, .docx files, transcripts, AI output —
+  // so that path has to be closed too.
+  const APP_ORIGIN = isDev ? 'http://localhost:5173' : null; // prod loads file://
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const sameApp = APP_ORIGIN ? url.startsWith(APP_ORIGIN) : url.startsWith('file://');
+    if (!sameApp) {
+      event.preventDefault();
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        shell.openExternal(url);   // treat it like any other external link
+      }
+    }
+  });
+
+  // Nothing in this app embeds third-party frames; refusing them outright
+  // removes a whole class of surprise.
+  mainWindow.webContents.on('will-attach-webview', (event) => event.preventDefault());
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
@@ -202,4 +223,8 @@ ipcMain.handle('report:projectSummary', (_event, projectId) => generateProjectSu
 ipcMain.handle('ai:summarizeSource', (_event, payload) => summarizeSource(payload));
 ipcMain.handle('ai:suggestChildCodes', (_event, payload) => suggestChildCodes(payload));
 ipcMain.handle('ai:setSetting', (_event, payload) => setSetting(payload.key, payload.value));
-ipcMain.handle('ai:getSetting', (_event, key) => getSetting(key));
+// getSettingPublic, not getSetting: the renderer must never be able to read the
+// stored API key back out. It only needs to know whether one is saved.
+ipcMain.handle('ai:getSetting', (_event, key) => getSettingPublic(key));
+ipcMain.handle('ai:hasSetting', (_event, key) => hasSetting(key));
+ipcMain.handle('ai:clearSetting', (_event, key) => clearSetting(key));

@@ -29,14 +29,19 @@ export function AiSettingsPanel() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showKey, setShowKey] = useState(false)
+  const [keySaved, setKeySaved] = useState(false)
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const storedProvider = await window.api.ai.getSetting('ai.provider') as string | null
-        const storedApiKey = await window.api.ai.getSetting('ai.apiKey') as string | null
+        // The saved key is deliberately not readable from here — the main
+        // process holds it and makes the provider calls. We only ask whether
+        // one exists so the field can say so.
+        const saved = await window.api.ai.hasSetting('ai.apiKey') as boolean
         setProvider(storedProvider || 'gemini')
-        setApiKey(storedApiKey || '')
+        setKeySaved(Boolean(saved))
+        setApiKey('')
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err))
       }
@@ -52,7 +57,13 @@ export function AiSettingsPanel() {
     setError(null)
     try {
       await window.api.ai.setSetting({ key: 'ai.provider', value: provider })
-      await window.api.ai.setSetting({ key: 'ai.apiKey', value: apiKey })
+      // An empty field means "leave the saved key alone", not "erase it" —
+      // the field starts empty now that the key can't be read back.
+      if (apiKey.trim()) {
+        await window.api.ai.setSetting({ key: 'ai.apiKey', value: apiKey.trim() })
+        setKeySaved(true)
+        setApiKey('')
+      }
       setSummary('Settings saved. You can now test the AI flow.')
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
@@ -125,16 +136,36 @@ export function AiSettingsPanel() {
                 type={showKey ? 'text' : 'password'}
                 value={apiKey}
                 onChange={(event) => setApiKey(event.target.value)}
-                placeholder={provider === 'mistral' ? 'Paste your Mistral API key' : 'Paste your Gemini API key'}
+                placeholder={
+                  keySaved
+                    ? 'A key is saved — type a new one to replace it'
+                    : provider === 'mistral' ? 'Paste your Mistral API key' : 'Paste your Gemini API key'
+                }
                 autoComplete="off"
               />
               <button type="button" className="ghost-button" onClick={() => setShowKey((value) => !value)}>
                 {showKey ? 'Hide' : 'Show'}
               </button>
+              {keySaved && (
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => {
+                    void window.api.ai.clearSetting('ai.apiKey').then(() => {
+                      setKeySaved(false)
+                      setApiKey('')
+                      setSummary('Saved key removed.')
+                    })
+                  }}
+                >
+                  Remove
+                </button>
+              )}
             </div>
           </label>
           <p className="description">
             Without a key, AI features fall back to a local offline placeholder so the rest of the app stays usable. Only the specific text you summarize or request suggestions for is ever sent to the provider.
+            {' '}Your key is encrypted with your operating system&rsquo;s keychain and is not readable from this screen once saved.
           </p>
           <button type="button" onClick={() => void handleSave()} disabled={loading}>Save settings</button>
         </div>

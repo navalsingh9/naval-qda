@@ -1,5 +1,30 @@
 const { getDatabase } = require('./db');
 
+// Resolved lazily rather than at import time. The backend test suite runs under
+// plain `node --test`, where `require('electron')` yields the path to the binary
+// rather than the module — so a top-level import here would quietly hand every
+// caller `undefined`, and on a machine without the package installed it throws
+// outright. Asking for it only when a secret is actually read or written keeps
+// this module importable anywhere.
+function electronSafeStorage() {
+  try {
+    const electron = require('electron');
+    return electron && typeof electron === 'object' ? electron.safeStorage : null;
+  } catch {
+    return null;
+  }
+}
+
+// Settings whose value must never leave the main process or sit in plaintext
+// on disk. Everything else in `settings` is ordinary config.
+const SECRET_KEYS = new Set(['ai.apiKey']);
+
+// Marker for a value encrypted with Electron's safeStorage (Keychain on
+// macOS, libsecret on Linux, DPAPI on Windows). Values written before this
+// existed have no prefix and are read back as-is, then re-encrypted the next
+// time they're written — so upgrading doesn't lose anyone's saved key.
+const ENC_PREFIX = 'enc:v1:';
+
 function ensureSettingsTable() {
   const db = getDatabase();
   db.exec(`
@@ -10,18 +35,71 @@ function ensureSettingsTable() {
   `);
 }
 
+function encryptIfPossible(value) {
+  try {
+    const ss = electronSafeStorage();
+    if (ss?.isEncryptionAvailable?.()) {
+      return ENC_PREFIX + ss.encryptString(value).toString('base64');
+    }
+  } catch {
+    // Fall through — a headless or misconfigured desktop keyring shouldn't
+    // stop someone saving a key, it just doesn't get encrypted at rest.
+  }
+  return value;
+}
+
+function decryptIfNeeded(stored) {
+  if (typeof stored !== 'string' || !stored.startsWith(ENC_PREFIX)) return stored;
+  try {
+    const ss = electronSafeStorage();
+    if (!ss?.decryptString) return null;
+    return ss.decryptString(Buffer.from(stored.slice(ENC_PREFIX.length), 'base64'));
+  } catch {
+    return null; // keyring unavailable or the value was written on another machine
+  }
+}
+
 function setSetting(key, value) {
   ensureSettingsTable();
   const db = getDatabase();
-  db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, String(value));
-  return { key, value };
+  const raw = String(value);
+  const toStore = SECRET_KEYS.has(key) ? encryptIfPossible(raw) : raw;
+  db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, toStore);
+  return { key, ok: true };   // deliberately does not echo the value back
 }
 
+/**
+ * Main-process read. Returns the real value, decrypting secrets.
+ * Never expose this over IPC — see getSettingPublic.
+ */
 function getSetting(key) {
   ensureSettingsTable();
   const db = getDatabase();
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
-  return row?.value ?? null;
+  if (row?.value === undefined) return null;
+  return SECRET_KEYS.has(key) ? decryptIfNeeded(row.value) : row.value;
+}
+
+/**
+ * Renderer-facing read. Secrets always come back null — the renderer never
+ * needs the key itself, only the main process calls the provider. Use
+ * hasSetting() to render "a key is saved" in the UI.
+ */
+function getSettingPublic(key) {
+  return SECRET_KEYS.has(key) ? null : getSetting(key);
+}
+
+function hasSetting(key) {
+  ensureSettingsTable();
+  const db = getDatabase();
+  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key);
+  return Boolean(row?.value);
+}
+
+function clearSetting(key) {
+  ensureSettingsTable();
+  getDatabase().prepare('DELETE FROM settings WHERE key = ?').run(key);
+  return { key, cleared: true };
 }
 
 function getAiConfig() {
@@ -43,7 +121,10 @@ function getAiConfig() {
 // model family, only reduced.
 async function callGemini({ apiKey, prompt, responseMimeType }) {
   const model = 'gemini-3.5-flash';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  // Key goes in the x-goog-api-key header, not ?key= — query strings are the
+  // part of a request most likely to end up in a proxy log or crash report.
+  // Same treatment the Mistral path below already gives its Authorization header.
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   const generationConfig = {
     maxOutputTokens: 2048,
     thinkingConfig: { thinkingLevel: 'low' },
@@ -54,7 +135,10 @@ async function callGemini({ apiKey, prompt, responseMimeType }) {
 
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig }),
   });
   if (!response.ok) {
@@ -218,7 +302,10 @@ async function suggestChildCodes({ sourceId, nodeId, maxSuggestions = 3 }) {
 module.exports = {
   ensureSettingsTable,
   setSetting,
-  getSetting,
+  getSetting,        // main-process only — returns decrypted secrets
+  getSettingPublic,  // safe to expose over IPC
+  hasSetting,
+  clearSetting,
   summarizeSource,
   suggestChildCodes,
 };

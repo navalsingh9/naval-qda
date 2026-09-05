@@ -93,7 +93,10 @@ declare global {
         summarizeSource: (payload: unknown) => Promise<unknown>
         suggestChildCodes: (payload: unknown) => Promise<unknown>
         setSetting: (payload: { key: string; value: string }) => Promise<unknown>
+        /** Returns null for secret keys such as `ai.apiKey`. Use hasSetting instead. */
         getSetting: (key: string) => Promise<unknown>
+        hasSetting: (key: string) => Promise<unknown>
+        clearSetting: (key: string) => Promise<unknown>
       }
     }
   }
