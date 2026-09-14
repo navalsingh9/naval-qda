@@ -1,5 +1,7 @@
 name: Fuzzing
 on: [push, pull_request]
+permissions:
+  contents: read
 jobs:
   fuzz:
     runs-on: ubuntu-latest
