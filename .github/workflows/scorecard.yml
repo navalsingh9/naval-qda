@@ -10,6 +10,11 @@
 # discipline". It also catches drift, such as an action quietly reverting to
 # a floating tag.
 #
+# CII-Best-Practices is stripped from the SARIF before upload: it grades
+# whether the project holds the OpenSSF Best Practices badge, which requires
+# a FLOSS license. This project is intentionally licensed CC BY-NC-ND, so
+# that check can never pass and isn't a useful signal here.
+#
 # This workflow uses actions not certified by GitHub, provided by third
 # parties under their own terms.
 
@@ -58,6 +63,15 @@ jobs:
           # readable and the README badge works. Public repo, so this is
           # only exposing what is already visible.
           publish_results: true
+
+      # Removes the CII-Best-Practices finding before anything downstream
+      # (artifact upload, code scanning) ever sees it. Runs after
+      # publish_results above, so the public Scorecard/badge score is
+      # unaffected -- this only changes what becomes a code-scanning alert.
+      - name: Strip CII-Best-Practices from SARIF
+        run: |
+          jq '.runs[].results |= map(select(.ruleId != "CII-Best-Practices"))' results.sarif > results.sarif.tmp
+          mv results.sarif.tmp results.sarif
 
       - name: Upload artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
