@@ -20,9 +20,11 @@
     "release:win": "npm run build:frontend && electron-builder --win --publish never",
     "release:mac": "npm run build:frontend && electron-builder --mac --publish never",
     "release:linux": "npm run build:frontend && electron-builder --linux --publish never",
-    "test": "node --test \"backend/**/*.test.js\""
+    "test": "node --test \"backend/**/*.test.js\"",
+    "fuzz": "jazzer fuzz/fuzz-target.js -- -runs=1000 --sync"
   },
   "devDependencies": {
+    "@jazzer.js/core": "^4.0.0",
     "concurrently": "^10.0.4",
     "cross-env": "^10.1.0",
     "electron": "^44.1.1",
