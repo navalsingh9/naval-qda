@@ -29,7 +29,7 @@
     "cross-env": "^10.1.0",
     "electron": "^44.1.1",
     "electron-builder": "^26.15.3",
-    "fast-check": "^4.10.0",
+    "fast-check": "^4.10.2",
     "wait-on": "^9.1.0"
   },
   "dependencies": {
