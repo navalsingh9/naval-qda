@@ -27,7 +27,7 @@
     "@jazzer.js/core": "^4.0.0",
     "concurrently": "^10.0.4",
     "cross-env": "^10.1.0",
-    "electron": "^44.1.1",
+    "electron": "^44.5.1",
     "electron-builder": "^26.15.3",
     "fast-check": "^4.10.2",
     "wait-on": "^9.5.1"
