@@ -30,7 +30,7 @@
     "electron": "^44.1.1",
     "electron-builder": "^26.15.3",
     "fast-check": "^4.10.0",
-    "wait-on": "^9.1.0"
+    "wait-on": "^9.5.1"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.2",
