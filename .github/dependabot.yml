@@ -5,6 +5,15 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      # Listed first: a dependency goes into the first group it matches.
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
+      # Everything else (checkout, setup-node, etc.) in one PR.
+      actions:
+        patterns:
+          - "*"
 
   # Root package.json — Electron shell and main-process dependencies.
   - package-ecosystem: "npm"
@@ -12,10 +21,20 @@ updates:
     schedule:
       interval: "weekly"
     groups:
+      # Kept first and without update-types, so Electron majors still
+      # arrive as their own PR, separate from routine bumps.
       electron:
         patterns:
           - "electron"
           - "electron-builder"
+      # Routine minor and patch bumps in one PR.
+      # Other major bumps still come as separate PRs for individual review.
+      root-deps:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # The renderer has its own lockfile, so it needs its own entry — this is
   # the one that was silently unwatched.
@@ -29,3 +48,9 @@ updates:
           - "react"
           - "react-dom"
           - "@types/react*"
+      frontend-deps:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
