@@ -200,12 +200,17 @@ ipcMain.handle('visualize:buildFeatureVectors', (_event, payload) => buildFeatur
 ipcMain.handle('visualize:clusterByWordSimilarity', (_event, payload) => clusterByWordSimilarity(payload));
 ipcMain.handle('visualize:clusterByCodingSimilarity', (_event, payload) => clusterByCodingSimilarity(payload));
 
+const ALLOWED_WHISPER_MODELS = ['tiny', 'tiny.en', 'base', 'base.en', 'small', 'small.en', 'medium', 'medium.en', 'large-v3-turbo'];
 ipcMain.handle('transcribe:importMedia', (_event, payload) => importMedia(payload.filePath, payload.projectId, payload.title));
 ipcMain.handle('transcribe:createJob', (event, payload) => {
   // The job's EventEmitter can't cross the IPC boundary (it isn't
   // structured-clonable), so we forward its events over webContents.send
   // and only return a plain, serializable descriptor to the renderer.
-  const job = createTranscriptionJob(payload.sourceId, payload.modelSize);
+  const modelSize = payload.modelSize ?? 'base';
+  if (!ALLOWED_WHISPER_MODELS.includes(modelSize)) {
+    throw new Error('Unsupported model size.');
+  }
+  const job = createTranscriptionJob(payload.sourceId, modelSize);
   const sender = event.sender;
 
   job.emitter.on('progress', (update) => {
